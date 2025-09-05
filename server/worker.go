@@ -3,11 +3,20 @@ package server
 import (
 	"context"
 	"net"
+
+	"github.com/ymz-ncnk/jointwork-go"
 )
+
+// WorkersFactory creates server Workers.
+type WorkersFactory interface {
+	New(count int, conns <-chan net.Conn, delegate Delegate,
+		callback LostConnCallback) []jointwork.Task
+}
 
 // NewWorker creates a new Worker.
 func NewWorker(conns <-chan net.Conn, delegate Delegate,
-	callback LostConnCallback) Worker {
+	callback LostConnCallback,
+) Worker {
 	ctx, cancel := context.WithCancel(context.Background())
 	return Worker{ctx, cancel, conns, delegate, callback}
 }
@@ -38,6 +47,8 @@ func (w Worker) Run() (err error) {
 		case <-w.ctx.Done():
 			return ErrClosed
 		case conn, more = <-w.conns:
+			// If Shutdown was called w.Stop() will not be called, in this case
+			// conns channel is closed.
 			if !more {
 				return nil
 			}
@@ -59,5 +70,17 @@ func (w Worker) Run() (err error) {
 
 func (w Worker) Stop() (err error) {
 	w.cancel()
+	return
+}
+
+type workersFactory struct{}
+
+func (f workersFactory) New(numWorkers int, conns <-chan net.Conn,
+	delegate Delegate, callback LostConnCallback,
+) (workers []jointwork.Task) {
+	workers = make([]jointwork.Task, numWorkers)
+	for i := range numWorkers {
+		workers[i] = NewWorker(conns, delegate, callback)
+	}
 	return
 }

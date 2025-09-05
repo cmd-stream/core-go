@@ -1,8 +1,10 @@
 package server
 
 import (
+	"crypto/tls"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/cmd-stream/core-go"
 	"github.com/ymz-ncnk/jointwork-go"
@@ -16,7 +18,18 @@ type LostConnCallback = func(addr net.Addr, err error)
 
 // New creates a new server.
 func New(delegate Delegate, ops ...SetOption) (s *Server) {
-	s = &Server{delegate: delegate, options: Options{WorkersCount: WorkersCount}}
+	return NewWithWorkers(delegate, workersFactory{}, ops...)
+}
+
+// NewWithWorkers creates a new server with the given workers factory.
+func NewWithWorkers(delegate Delegate, factory WorkersFactory, ops ...SetOption) (
+	s *Server,
+) {
+	s = &Server{
+		delegate: delegate, factory: factory, options: Options{
+			WorkersCount: WorkersCount,
+		},
+	}
 	Apply(ops, &s.options)
 	return
 }
@@ -27,9 +40,18 @@ func New(delegate Delegate, ops ...SetOption) (s *Server) {
 // using a specified ServerDelegate.
 type Server struct {
 	delegate Delegate
+	factory  WorkersFactory
 	receiver *ConnReceiver
 	mu       sync.Mutex
 	options  Options
+}
+
+func (s *Server) ListenAndServe(addr string) (err error) {
+	listener, err := makeListener(addr, s.options)
+	if err != nil {
+		return
+	}
+	return s.Serve(listener)
 }
 
 // Serve accepts and processes incoming connections on the listener using
@@ -85,12 +107,13 @@ func (s *Server) setReceiver(listener core.Listener, conns chan net.Conn) {
 }
 
 func (s *Server) makeTasks(conns chan net.Conn, delegate Delegate) (
-	tasks []jointwork.Task) {
-	tasks = make([]jointwork.Task, 1+s.options.WorkersCount)
-	tasks[0] = s.receiver
-	for i := 1; i < len(tasks); i++ {
-		tasks[i] = NewWorker(conns, delegate, s.options.LostConnCallback)
-	}
+	tasks []jointwork.Task,
+) {
+	workers := s.factory.New(s.options.WorkersCount, conns, delegate,
+		s.options.LostConnCallback)
+	tasks = make([]jointwork.Task, 0, 1+len(workers))
+	tasks = append(tasks, s.receiver)
+	tasks = append(tasks, workers...)
 	return
 }
 
@@ -98,4 +121,27 @@ func (s *Server) serving() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.receiver != nil
+}
+
+func makeListener(addr string, o Options) (
+	listener core.Listener, err error,
+) {
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return
+	}
+	listener = l.(*net.TCPListener)
+	if o.TLSConfig != nil {
+		listener = listenerAdapter{tls.NewListener(l, o.TLSConfig), listener}
+	}
+	return
+}
+
+type listenerAdapter struct {
+	net.Listener
+	l core.Listener
+}
+
+func (a listenerAdapter) SetDeadline(tm time.Time) error {
+	return a.l.SetDeadline(tm)
 }

@@ -1,11 +1,15 @@
 package server
 
-import "time"
+import (
+	"crypto/tls"
+	"time"
+)
 
 type Options struct {
 	WorkersCount     int
 	LostConnCallback LostConnCallback
 	ConnReceiver     []SetConnReceiverOption
+	TLSConfig        *tls.Config
 }
 
 type SetOption func(o *Options)
@@ -24,6 +28,11 @@ func WithLostConnCallback(callback LostConnCallback) SetOption {
 // WithConnReceiver configures the ConnReceiver with the specified options.
 func WithConnReceiver(ops ...SetConnReceiverOption) SetOption {
 	return func(o *Options) { o.ConnReceiver = ops }
+}
+
+// WithTLSConfig sets the TLS configuration.
+func WithTLSConfig(conf *tls.Config) SetOption {
+	return func(o *Options) { o.TLSConfig = conf }
 }
 
 func Apply(ops []SetOption, o *Options) {
