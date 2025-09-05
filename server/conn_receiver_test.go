@@ -13,8 +13,7 @@ import (
 )
 
 func TestConnReceiver(t *testing.T) {
-
-	var delta = 100 * time.Millisecond
+	delta := 100 * time.Millisecond
 
 	t.Run("Conf.FirstConnTimeout should be applied only to the first conn + if Listener.SetDeadline failed with an error, Run should return it",
 		func(t *testing.T) {
@@ -189,7 +188,6 @@ func TestConnReceiver(t *testing.T) {
 		func(t *testing.T) {
 			testStopWhileQueueConn(true, t)
 		})
-
 }
 
 func runConnReceiver(r *ConnReceiver) (errs chan error) {

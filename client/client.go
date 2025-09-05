@@ -95,7 +95,8 @@ type Client[T any] struct {
 // Returns the sequence number of the Command and any error encountered
 // (non-nil if the Command was not sent successfully).
 func (c *Client[T]) Send(cmd base.Cmd[T], results chan<- base.AsyncResult) (
-	seq base.Seq, n int, err error) {
+	seq base.Seq, n int, err error,
+) {
 	var chFl chan error
 	c.muSn.Lock()
 	chFl = c.chFl
@@ -235,7 +236,8 @@ func (c *Client[T]) unmemorize(seq base.Seq) {
 }
 
 func (c *Client[T]) loadAndUnmemorize(seq base.Seq) (
-	results chan<- base.AsyncResult, pst bool) {
+	results chan<- base.AsyncResult, pst bool,
+) {
 	c.muWt.Lock()
 	results, pst = c.waiting[seq]
 	if pst {
@@ -246,7 +248,8 @@ func (c *Client[T]) loadAndUnmemorize(seq base.Seq) (
 }
 
 func (c *Client[T]) load(seq base.Seq) (results chan<- base.AsyncResult,
-	pst bool) {
+	pst bool,
+) {
 	c.muWt.Lock()
 	results, pst = c.waiting[seq]
 	c.muWt.Unlock()
@@ -283,7 +286,8 @@ func (c *Client[T]) changeChFl() {
 }
 
 func (c *Client[T]) rangeAndUnmemorize(
-	fn func(seq base.Seq, results chan<- base.AsyncResult)) {
+	fn func(seq base.Seq, results chan<- base.AsyncResult),
+) {
 	c.muWt.Lock()
 	for seq, results := range c.waiting {
 		fn(seq, results)

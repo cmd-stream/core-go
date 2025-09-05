@@ -16,7 +16,8 @@ const (
 
 // NewConnReceiver creates a new ConnReceiver.
 func NewConnReceiver(listener core.Listener, conns chan net.Conn,
-	ops ...SetConnReceiverOption) *ConnReceiver {
+	ops ...SetConnReceiverOption,
+) *ConnReceiver {
 	r := ConnReceiver{
 		listener: listener,
 		conns:    conns,
