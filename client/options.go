@@ -6,7 +6,7 @@ type Options struct {
 
 type SetOption func(o *Options)
 
-// WithCallback sets the the unexpected result callback.
+// WithUnexpectedResultCallback sets the the unexpected result callback.
 func WithUnexpectedResultCallback(callback UnexpectedResultCallback) SetOption {
 	return func(o *Options) { o.UnexpectedResultCallback = callback }
 }
