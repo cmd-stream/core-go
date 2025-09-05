@@ -6,8 +6,8 @@
 
 core-go contains the definitions for both the client and the server.
 
-The client delegates all communication tasks, such as sending commands, 
-receiving results, and closing the connection to the `client.Delegate`.
+The client delegates all communication tasks, such as sending Commands, 
+receiving Results, and closing the connection to the `client.Delegate`.
 
 The server uses a configurable number of workers to manage client connections 
 via the `server.Delegate`.
