@@ -22,18 +22,18 @@ func TestClient(t *testing.T) {
 			var (
 				wantSeq     core.Seq = 1
 				wantCmd              = cmock.NewCmd()
-				wantSendN   int      = 1
+				wantSendN            = 1
 				wantSendErr error    = nil
 				wantResult1          = cmock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return false },
 				)
-				wantBytesRead1 int = 2
-				wantResult2        = cmock.NewResult().RegisterLastOne(
+				wantBytesRead1 = 2
+				wantResult2    = cmock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
-				wantBytesRead2 int = 3
-				receiveDone        = make(chan struct{})
-				delegate           = mock.NewDelegate().RegisterSend(
+				wantBytesRead2 = 3
+				receiveDone    = make(chan struct{})
+				delegate       = mock.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						asserterror.Equal(seq, wantSeq, t)
 						asserterror.EqualDeep(cmd, wantCmd, t)
@@ -62,7 +62,7 @@ func TestClient(t *testing.T) {
 					wantCmd.Mock, wantResult1.Mock, wantResult2.Mock,
 					delegate.Mock,
 				}
-				client  = New[any](delegate, nil)
+				client  = New(delegate, nil)
 				results = make(chan core.AsyncResult, 2)
 			)
 			seq, n, err := client.Send(wantCmd, results)
@@ -92,13 +92,13 @@ func TestClient(t *testing.T) {
 				wantResult1 = cmock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
-				wantResult1N int = 1
-				wantResult2      = cmock.NewResult().RegisterLastOne(
+				wantResult1N = 1
+				wantResult2  = cmock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
-				wantBytesRead2 int = 2
-				receiveDone        = make(chan struct{})
-				delegate           = mock.NewDelegate().RegisterSend(
+				wantBytesRead2 = 2
+				receiveDone    = make(chan struct{})
+				delegate       = mock.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return
 					},
@@ -129,7 +129,7 @@ func TestClient(t *testing.T) {
 					asserterror.EqualDeep(result, wantResult2, t)
 					close(done)
 				}
-				client  = New[any](delegate, WithUnexpectedResultCallback(callback))
+				client  = New(delegate, WithUnexpectedResultCallback(callback))
 				results = make(chan core.AsyncResult, 1)
 			)
 			client.Send(wantCmd, results)
@@ -173,7 +173,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks  = []*mok.Mock{wantCmd1.Mock, wantCmd2.Mock, delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(wantCmd1, nil)
 		asserterror.Equal(seq, wantSeq1, t)
@@ -205,7 +205,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks  = []*mok.Mock{delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(nil, nil)
 		asserterror.Equal(client.Has(seq), true, t)
@@ -232,7 +232,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks  = []*mok.Mock{delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		seq, _, err := client.Send(nil, nil)
 		asserterror.EqualError(err, wantErr, t)
@@ -259,7 +259,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks  = []*mok.Mock{delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(nil, nil)
 		asserterror.Equal(client.Has(seq), false, t)
@@ -298,7 +298,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks  = []*mok.Mock{wantCmd.Mock, delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		seq, _, err := client.SendWithDeadline(wantCmd, nil, wantDeadline)
 		asserterror.EqualError(err, nil, t)
@@ -328,7 +328,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			seq, _, err := client.SendWithDeadline(nil, nil, time.Time{})
 			asserterror.EqualError(err, wantErr, t)
@@ -355,7 +355,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			_, _, err := client.SendWithDeadline(nil, nil, time.Time{})
 			asserterror.EqualError(err, wantErr, t)
@@ -384,7 +384,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			_, _, err := client.SendWithDeadline(nil, nil, time.Time{})
 			asserterror.EqualError(err, wantErr, t)
@@ -409,7 +409,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			seq, _, _ := client.SendWithDeadline(nil, nil, time.Time{})
 			asserterror.Equal(client.Has(seq), false, t)
@@ -439,7 +439,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			seq, _, _ := client.SendWithDeadline(nil, nil, time.Time{})
 			asserterror.Equal(client.Has(seq), false, t)
@@ -468,7 +468,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks  = []*mok.Mock{cmd.Mock, delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(cmd, nil)
 		client.Forget(seq)
@@ -492,7 +492,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			waitDone(client.Done(), t)
 			err := client.Err()
@@ -521,7 +521,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{wantCmd.Mock, wantResult.Mock, delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			client.Send(wantCmd, results)
 			time.Sleep(100 * time.Millisecond)
@@ -552,7 +552,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			err := client.Close()
 			asserterror.EqualError(err, wantErr, t)
@@ -585,7 +585,7 @@ func TestClient(t *testing.T) {
 				)
 				wg = &sync.WaitGroup{}
 				// mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			wg.Add(1)
 			go func() {
@@ -639,7 +639,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			waitDone(reconected, t)
 			waitDone(client.Done(), t)
@@ -659,7 +659,7 @@ func TestClient(t *testing.T) {
 				func() (err error) { close(receiveDone); return nil },
 			)
 			mocks  = []*mok.Mock{delegate.Mock}
-			client = New[any](delegate, nil)
+			client = New(delegate, nil)
 		)
 		err := client.Close()
 		asserterror.EqualError(err, nil, t)
@@ -683,7 +683,7 @@ func TestClient(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks  = []*mok.Mock{delegate.Mock}
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 			)
 			waitDone(client.Done(), t)
 			err := client.Err()
@@ -705,7 +705,7 @@ func TestClient(t *testing.T) {
 				).RegisterClose(
 					func() (err error) { return },
 				)
-				client = New[any](delegate, nil)
+				client = New(delegate, nil)
 				mocks  = []*mok.Mock{delegate.Mock}
 			)
 			waitDone(client.Done(), t)
