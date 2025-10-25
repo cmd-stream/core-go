@@ -1,3 +1,7 @@
+// Package server provides a configurable cmd-stream-go server implementation.
+//
+// The Server accepts client connections and delegates Command handling to a
+// user-provided ServerDelegate.
 package server
 
 import (

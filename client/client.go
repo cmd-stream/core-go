@@ -1,3 +1,7 @@
+// Package client provides a thread-safe, asynchronous cmd-stream client.
+//
+// The Client uses a Delegate for sending Commands, receiving Results, and
+// managing connection state.
 package client
 
 import (

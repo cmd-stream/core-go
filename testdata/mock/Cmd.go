@@ -26,7 +26,8 @@ func (c Cmd) RegisterExec(fn ExecFn) Cmd {
 }
 
 func (c Cmd) Exec(ctx context.Context, seq base.Seq, at time.Time, receiver any,
-	proxy base.Proxy) (err error) {
+	proxy base.Proxy,
+) (err error) {
 	vals, err := c.Call("Exec", mok.SafeVal[context.Context](ctx), seq, at,
 		mok.SafeVal[any](receiver), mok.SafeVal[base.Proxy](proxy))
 	if err != nil {

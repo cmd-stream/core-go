@@ -16,5 +16,4 @@ func TestOptions(t *testing.T) {
 	if o.UnexpectedResultCallback == nil {
 		t.Errorf("UnexpectedResultCallback == nil")
 	}
-
 }

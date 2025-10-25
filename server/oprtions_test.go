@@ -9,10 +9,10 @@ import (
 
 func TestOptions(t *testing.T) {
 	var (
-		o                                     = Options{}
-		wantWorkersCount                      = 1
-		wantLostConnCallback LostConnCallback = func(addr net.Addr, err error) {}
-		wantConnReceiver                      = []SetConnReceiverOption{}
+		o                    = Options{}
+		wantWorkersCount     = 1
+		wantLostConnCallback = func(addr net.Addr, err error) {}
+		wantConnReceiver     = []SetConnReceiverOption{}
 	)
 	Apply([]SetOption{
 		WithWorkersCount(wantWorkersCount),
@@ -33,7 +33,6 @@ func TestOptions(t *testing.T) {
 		t.Errorf("unexpected ConnReceiver, want %v actual %v", wantConnReceiver,
 			o.ConnReceiver)
 	}
-
 }
 
 func TestConnReceiverOptions(t *testing.T) {
@@ -49,5 +48,4 @@ func TestConnReceiverOptions(t *testing.T) {
 		t.Errorf("unexpected FirstConnTimeout, want %v actual %v",
 			wantFirstConnTimeout, o.FirstConnTimeout)
 	}
-
 }

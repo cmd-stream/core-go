@@ -8,14 +8,16 @@ import (
 	"github.com/ymz-ncnk/mok"
 )
 
-type LocalAddrFn func() (addr net.Addr)
-type RemoteAddrFn func() (addr net.Addr)
-type SetSendDeadlineFn func(deadline time.Time) (err error)
-type SendFn func(seq core.Seq, cmd core.Cmd[any]) (n int, err error)
-type FlushFn func() (err error)
-type SetReceiveDeadlineFn func(deadline time.Time) (err error)
-type ReceiveFn func() (seq core.Seq, result core.Result, n int, err error)
-type CloseFn func() (err error)
+type (
+	LocalAddrFn          func() (addr net.Addr)
+	RemoteAddrFn         func() (addr net.Addr)
+	SetSendDeadlineFn    func(deadline time.Time) (err error)
+	SendFn               func(seq core.Seq, cmd core.Cmd[any]) (n int, err error)
+	FlushFn              func() (err error)
+	SetReceiveDeadlineFn func(deadline time.Time) (err error)
+	ReceiveFn            func() (seq core.Seq, result core.Result, n int, err error)
+	CloseFn              func() (err error)
+)
 
 func NewDelegate() Delegate {
 	return Delegate{Mock: mok.New("Delegate")}
@@ -66,7 +68,8 @@ func (m Delegate) RegisterFlush(fn FlushFn) Delegate {
 }
 
 func (m Delegate) RegisterNSetReceiveDeadline(n int,
-	fn SetReceiveDeadlineFn) Delegate {
+	fn SetReceiveDeadlineFn,
+) Delegate {
 	m.RegisterN("SetReceiveDeadline", n, fn)
 	return m
 }
@@ -142,7 +145,8 @@ func (m Delegate) SetReceiveDeadline(deadline time.Time) (err error) {
 }
 
 func (m Delegate) Receive() (seq core.Seq, result core.Result, n int,
-	err error) {
+	err error,
+) {
 	vals, err := m.Call("Receive")
 	if err != nil {
 		panic(err)

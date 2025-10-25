@@ -13,7 +13,6 @@ import (
 )
 
 func TestWorker(t *testing.T) {
-
 	addr := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9000}
 
 	t.Run("Worker should be able to handle several conns with LostConnCallback",
@@ -166,7 +165,6 @@ func TestWorker(t *testing.T) {
 		close(conns)
 		testAsyncErr(wantErr, errs, mocks, t)
 	})
-
 }
 
 func runWorker(worker Worker) (errs chan error) {

@@ -7,14 +7,16 @@ import (
 	"github.com/ymz-ncnk/mok"
 )
 
-type LocalAddrFn func() (addr net.Addr)
-type RemoteAddrFn func() (addr net.Addr)
-type SetDeadlineFn func(deadline time.Time) (err error)
-type SetReadDeadlineFn func(deadline time.Time) (err error)
-type SetWriteDeadlineFn func(deadline time.Time) (err error)
-type WriteFn func(b []byte) (n int, err error)
-type ReadFn func(b []byte) (n int, err error)
-type CloseFn func() (err error)
+type (
+	LocalAddrFn        func() (addr net.Addr)
+	RemoteAddrFn       func() (addr net.Addr)
+	SetDeadlineFn      func(deadline time.Time) (err error)
+	SetReadDeadlineFn  func(deadline time.Time) (err error)
+	SetWriteDeadlineFn func(deadline time.Time) (err error)
+	WriteFn            func(b []byte) (n int, err error)
+	ReadFn             func(b []byte) (n int, err error)
+	CloseFn            func() (err error)
+)
 
 // NewConn creates a new Conn.
 func NewConn() Conn {

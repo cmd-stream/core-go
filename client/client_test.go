@@ -15,8 +15,7 @@ import (
 )
 
 func TestClient(t *testing.T) {
-
-	var delta = 100 * time.Millisecond
+	delta := 100 * time.Millisecond
 
 	t.Run("We should be able to send cmd and receive several Results",
 		func(t *testing.T) {
@@ -59,8 +58,10 @@ func TestClient(t *testing.T) {
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
-				mocks = []*mok.Mock{wantCmd.Mock, wantResult1.Mock, wantResult2.Mock,
-					delegate.Mock}
+				mocks = []*mok.Mock{
+					wantCmd.Mock, wantResult1.Mock, wantResult2.Mock,
+					delegate.Mock,
+				}
 				client  = New[any](delegate, nil)
 				results = make(chan core.AsyncResult, 2)
 			)
@@ -120,8 +121,10 @@ func TestClient(t *testing.T) {
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
-				mocks = []*mok.Mock{wantCmd.Mock, wantResult1.Mock, wantResult2.Mock,
-					delegate.Mock}
+				mocks = []*mok.Mock{
+					wantCmd.Mock, wantResult1.Mock, wantResult2.Mock,
+					delegate.Mock,
+				}
 				callback = func(seq core.Seq, result core.Result) {
 					asserterror.EqualDeep(result, wantResult2, t)
 					close(done)
@@ -708,7 +711,6 @@ func TestClient(t *testing.T) {
 			waitDone(client.Done(), t)
 			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
-
 }
 
 func waitDone(done <-chan struct{}, t *testing.T) {

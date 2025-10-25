@@ -17,7 +17,6 @@ import (
 )
 
 func TestServer(t *testing.T) {
-
 	t.Run("Serving should fail if Conf.WorkersCount == 0", func(t *testing.T) {
 		var (
 			wantErr = ErrNoWorkers
@@ -47,7 +46,7 @@ func TestServer(t *testing.T) {
 						return wantHandleErr
 					},
 				)
-				callback LostConnCallback = func(addr net.Addr, err error) {
+				callback = func(addr net.Addr, err error) {
 					asserterror.EqualError(err, wantHandleErr, t)
 					wg.Done()
 				}
@@ -97,10 +96,12 @@ func TestServer(t *testing.T) {
 					wg.Add(2)
 					return wg
 				}()
-				addr = &net.TCPAddr{IP: net.ParseIP("127.0.0.1"),
-					Port: 9000}
-				conn                      = makeConn(addr)
-				callback LostConnCallback = func(a net.Addr, err error) {
+				addr = &net.TCPAddr{
+					IP:   net.ParseIP("127.0.0.1"),
+					Port: 9000,
+				}
+				conn     = makeConn(addr)
+				callback = func(a net.Addr, err error) {
 					if a != addr {
 						t.Errorf("unexpected addr, want '%v' actual '%v'", addr, a)
 					}
@@ -152,9 +153,9 @@ func TestServer(t *testing.T) {
 					wg.Add(2)
 					return wg
 				}()
-				addr                      = &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9000}
-				conn                      = makeConn(addr)
-				callback LostConnCallback = func(a net.Addr, err error) {
+				addr     = &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9000}
+				conn     = makeConn(addr)
+				callback = func(a net.Addr, err error) {
 					if a != addr {
 						t.Errorf("unexpected addr, want '%v' actual '%v'", addr, a)
 					}
@@ -285,11 +286,11 @@ func TestServer(t *testing.T) {
 			)
 			assertfatal.EqualError(err, wantErr, t)
 		})
-
 }
 
 func startServer(server *Server, listener core.Listener) (
-	errs <-chan error) {
+	errs <-chan error,
+) {
 	ch := make(chan error, 1)
 	go func() {
 		err := server.Serve(listener)
@@ -304,7 +305,8 @@ func makeConn(addr net.Addr) cmock.Conn {
 }
 
 func testAsyncErr(wantErr error, errs <-chan error, mocks []*mok.Mock,
-	t *testing.T) {
+	t *testing.T,
+) {
 	select {
 	case <-time.NewTimer(500 * time.Millisecond).C:
 		t.Error("test lasts too long")

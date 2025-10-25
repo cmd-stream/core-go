@@ -8,9 +8,11 @@ import (
 	"github.com/ymz-ncnk/mok"
 )
 
-type SendFn func(seq base.Seq, result base.Result) (n int, err error)
-type SendWithDeadlineFn func(seq base.Seq, result base.Result,
-	deadline time.Time) (n int, err error)
+type (
+	SendFn             func(seq base.Seq, result base.Result) (n int, err error)
+	SendWithDeadlineFn func(seq base.Seq, result base.Result,
+		deadline time.Time) (n int, err error)
+)
 
 func NewProxy() Proxy {
 	return Proxy{mok.New("Proxy")}
@@ -69,7 +71,8 @@ func (p Proxy) Send(seq base.Seq, result base.Result) (n int, err error) {
 }
 
 func (p Proxy) SendWithDeadline(seq base.Seq, result base.Result,
-	deadline time.Time) (n int, err error) {
+	deadline time.Time,
+) (n int, err error) {
 	vals, err := p.Call("SendWithDeadline", seq, result, deadline)
 	if err != nil {
 		panic(err)

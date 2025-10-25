@@ -7,8 +7,10 @@ import (
 	"github.com/ymz-ncnk/mok"
 )
 
-type AddrFn func() (addr net.Addr)
-type AcceptFn func() (conn net.Conn, err error)
+type (
+	AddrFn   func() (addr net.Addr)
+	AcceptFn func() (conn net.Conn, err error)
+)
 
 func NewListener() Listener {
 	return Listener{mok.New("Listener")}

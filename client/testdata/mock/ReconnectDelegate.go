@@ -34,19 +34,22 @@ func (m ReconnectDelegate) RegisterRemoteAddr(fn RemoteAddrFn) ReconnectDelegate
 }
 
 func (m ReconnectDelegate) RegisterNSetSendDeadline(n int,
-	fn SetSendDeadlineFn) ReconnectDelegate {
+	fn SetSendDeadlineFn,
+) ReconnectDelegate {
 	m.RegisterN("SetSendDeadline", n, fn)
 	return m
 }
 
 func (m ReconnectDelegate) RegisterSetSendDeadline(
-	fn func(deadline time.Time) (err error)) ReconnectDelegate {
+	fn func(deadline time.Time) (err error),
+) ReconnectDelegate {
 	m.Register("SetSendDeadline", fn)
 	return m
 }
 
 func (m ReconnectDelegate) RegisterNSend(n int,
-	fn SendFn) ReconnectDelegate {
+	fn SendFn,
+) ReconnectDelegate {
 	m.RegisterN("Send", n, fn)
 	return m
 }
@@ -67,13 +70,15 @@ func (m ReconnectDelegate) RegisterFlush(fn FlushFn) ReconnectDelegate {
 }
 
 func (m ReconnectDelegate) RegisterNSetReceiveDeadline(n int,
-	fn SetReceiveDeadlineFn) ReconnectDelegate {
+	fn SetReceiveDeadlineFn,
+) ReconnectDelegate {
 	m.RegisterN("SetReceiveDeadline", n, fn)
 	return m
 }
 
 func (m ReconnectDelegate) RegisterSetReceiveDeadline(
-	fn SetReceiveDeadlineFn) ReconnectDelegate {
+	fn SetReceiveDeadlineFn,
+) ReconnectDelegate {
 	m.Register("SetReceiveDeadline", fn)
 	return m
 }
@@ -125,7 +130,8 @@ func (m ReconnectDelegate) SetSendDeadline(deadline time.Time) (err error) {
 }
 
 func (m ReconnectDelegate) Send(seq core.Seq, cmd core.Cmd[any]) (n int,
-	err error) {
+	err error,
+) {
 	vals, err := m.Call("Send", seq, mok.SafeVal[core.Cmd[any]](cmd))
 	if err != nil {
 		panic(err)
@@ -145,7 +151,8 @@ func (m ReconnectDelegate) Flush() (err error) {
 }
 
 func (m ReconnectDelegate) SetReceiveDeadline(deadline time.Time) (
-	err error) {
+	err error,
+) {
 	vals, err := m.Call("SetReceiveDeadline", deadline)
 	if err != nil {
 		panic(err)
@@ -155,7 +162,8 @@ func (m ReconnectDelegate) SetReceiveDeadline(deadline time.Time) (
 }
 
 func (m ReconnectDelegate) Receive() (seq core.Seq, result core.Result, n int,
-	err error) {
+	err error,
+) {
 	vals, err := m.Call("Receive")
 	if err != nil {
 		panic(err)
