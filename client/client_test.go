@@ -220,7 +220,7 @@ func TestClient(t *testing.T) {
 			delegateErr = errors.New("Delegate.Send error")
 
 			wantSeq  core.Seq = 1
-			wantErr           = wrapErr(delegateErr)
+			wantErr           = NewClientError(delegateErr)
 			delegate          = mock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return 1, delegateErr
@@ -318,7 +318,7 @@ func TestClient(t *testing.T) {
 				delegateErr = errors.New("Delegate.Send error")
 
 				wantSeq  core.Seq = 1
-				wantErr           = wrapErr(delegateErr)
+				wantErr           = NewClientError(delegateErr)
 				delegate          = mock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return delegateErr
@@ -346,7 +346,7 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				delegateErr = errors.New("Delegate.SetSendDeadline error")
-				wantErr     = wrapErr(delegateErr)
+				wantErr     = NewClientError(delegateErr)
 				delegate    = mock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return delegateErr
@@ -544,7 +544,7 @@ func TestClient(t *testing.T) {
 				delegateErr = errors.New("Delegate.Close error")
 
 				receiveDone = make(chan struct{})
-				wantErr     = wrapErr(delegateErr)
+				wantErr     = NewClientError(delegateErr)
 				delegate    = mock.NewDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						<-receiveDone
@@ -574,7 +574,7 @@ func TestClient(t *testing.T) {
 			var (
 				delegateErr = errors.New("flush error")
 
-				wantErr  = wrapErr(delegateErr)
+				wantErr  = NewClientError(delegateErr)
 				cmd1     = cmock.NewCmd()
 				cmd2     = cmock.NewCmd()
 				cmd3     = cmock.NewCmd()

@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	base "github.com/cmd-stream/core-go"
+	"github.com/cmd-stream/core-go"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 //
 // It is invoked when the sequence number of a Result does not match the sequence
 // number of any Command sent by the client that is awaiting a Result.
-type UnexpectedResultCallback func(seq base.Seq, result base.Result)
+type UnexpectedResultCallback func(seq core.Seq, result core.Result)
 
 // New creates a new client.
 func New[T any](delegate Delegate[T], ops ...SetOption) *Client[T] {
@@ -34,7 +34,7 @@ func New[T any](delegate Delegate[T], ops ...SetOption) *Client[T] {
 		client             = &Client[T]{
 			cancel:   cancel,
 			delegate: delegate,
-			waiting:  make(map[base.Seq]chan<- base.AsyncResult),
+			waiting:  make(map[core.Seq]chan<- core.AsyncResult),
 			done:     make(chan struct{}),
 			flagFl:   &flagFl,
 			chFl:     make(chan error, 1),
@@ -70,8 +70,8 @@ type Client[T any] struct {
 	cancel   context.CancelFunc
 	state    int
 	delegate Delegate[T]
-	seq      base.Seq
-	waiting  map[base.Seq]chan<- base.AsyncResult
+	seq      core.Seq
+	waiting  map[core.Seq]chan<- core.AsyncResult
 	err      error
 	done     chan struct{}
 	flagFl   *uint32
@@ -96,8 +96,8 @@ type Client[T any] struct {
 //
 // Returns the sequence number of the Command and any error encountered
 // (non-nil if the Command was not sent successfully).
-func (c *Client[T]) Send(cmd base.Cmd[T], results chan<- base.AsyncResult) (
-	seq base.Seq, n int, err error,
+func (c *Client[T]) Send(cmd core.Cmd[T], results chan<- core.AsyncResult) (
+	seq core.Seq, n int, err error,
 ) {
 	var chFl chan error
 	c.muSn.Lock()
@@ -109,12 +109,12 @@ func (c *Client[T]) Send(cmd base.Cmd[T], results chan<- base.AsyncResult) (
 	if err != nil {
 		c.muSn.Unlock()
 		c.Forget(seq)
-		err = wrapErr(err)
+		err = NewClientError(err)
 		return
 	}
 	c.muSn.Unlock()
 	if err = c.flush(seq, chFl); err != nil {
-		err = wrapErr(err)
+		err = NewClientError(err)
 	}
 	return
 }
@@ -124,10 +124,10 @@ func (c *Client[T]) Send(cmd base.Cmd[T], results chan<- base.AsyncResult) (
 // This method behaves like Send but allows setting a deadline for Command
 // execution. Use it when you need to enforce a time limit on the Command's
 // processing.
-func (c *Client[T]) SendWithDeadline(cmd base.Cmd[T],
-	results chan<- base.AsyncResult,
+func (c *Client[T]) SendWithDeadline(cmd core.Cmd[T],
+	results chan<- core.AsyncResult,
 	deadline time.Time,
-) (seq base.Seq, n int, err error) {
+) (seq core.Seq, n int, err error) {
 	var chFl chan error
 	c.muSn.Lock()
 	chFl = c.chFl
@@ -138,7 +138,7 @@ func (c *Client[T]) SendWithDeadline(cmd base.Cmd[T],
 	if err != nil {
 		c.muSn.Unlock()
 		c.Forget(seq)
-		err = wrapErr(err)
+		err = NewClientError(err)
 		return
 	}
 	n, err = c.delegate.Send(seq, cmd)
@@ -149,14 +149,14 @@ func (c *Client[T]) SendWithDeadline(cmd base.Cmd[T],
 	}
 	c.muSn.Unlock()
 	if err = c.flush(seq, chFl); err != nil {
-		err = wrapErr(err)
+		err = NewClientError(err)
 	}
 	return
 }
 
 // Has checks if the Command with the specified sequence number has been sent
 // by the Client and still waiting for the Result.
-func (c *Client[T]) Has(seq base.Seq) bool {
+func (c *Client[T]) Has(seq core.Seq) bool {
 	_, pst := c.load(seq)
 	return pst
 }
@@ -166,7 +166,7 @@ func (c *Client[T]) Has(seq base.Seq) bool {
 //
 // After calling Forget, all the results of the corresponding Command will be
 // handled with UnexpectedResultCallback.
-func (c *Client[T]) Forget(seq base.Seq) {
+func (c *Client[T]) Forget(seq core.Seq) {
 	c.unmemorize(seq)
 }
 
@@ -193,7 +193,7 @@ func (c *Client[T]) Close() (err error) {
 	c.state = closed
 	if err = c.delegate.Close(); err != nil {
 		c.state = inProgress
-		return wrapErr(err)
+		return NewClientError(err)
 	}
 	c.cancel()
 	return
@@ -204,10 +204,10 @@ func (c *Client[T]) receive(ctx context.Context) (err error) {
 		c.unmemorizeAll(err)
 	}()
 	var (
-		seq     base.Seq
-		result  base.Result
+		seq     core.Seq
+		result  core.Result
 		n       int
-		results chan<- base.AsyncResult
+		results chan<- core.AsyncResult
 		pst     bool
 	)
 	for {
@@ -227,26 +227,26 @@ func (c *Client[T]) receive(ctx context.Context) (err error) {
 		select {
 		case <-ctx.Done():
 			return context.Canceled
-		case results <- base.AsyncResult{Seq: seq, BytesRead: n, Result: result}:
+		case results <- core.AsyncResult{Seq: seq, BytesRead: n, Result: result}:
 			continue
 		}
 	}
 }
 
-func (c *Client[T]) memorize(seq base.Seq, results chan<- base.AsyncResult) {
+func (c *Client[T]) memorize(seq core.Seq, results chan<- core.AsyncResult) {
 	c.muWt.Lock()
 	c.waiting[seq] = results
 	c.muWt.Unlock()
 }
 
-func (c *Client[T]) unmemorize(seq base.Seq) {
+func (c *Client[T]) unmemorize(seq core.Seq) {
 	c.muWt.Lock()
 	delete(c.waiting, seq)
 	c.muWt.Unlock()
 }
 
-func (c *Client[T]) loadAndUnmemorize(seq base.Seq) (
-	results chan<- base.AsyncResult, pst bool,
+func (c *Client[T]) loadAndUnmemorize(seq core.Seq) (
+	results chan<- core.AsyncResult, pst bool,
 ) {
 	c.muWt.Lock()
 	results, pst = c.waiting[seq]
@@ -257,7 +257,7 @@ func (c *Client[T]) loadAndUnmemorize(seq base.Seq) (
 	return
 }
 
-func (c *Client[T]) load(seq base.Seq) (results chan<- base.AsyncResult,
+func (c *Client[T]) load(seq core.Seq) (results chan<- core.AsyncResult,
 	pst bool,
 ) {
 	c.muWt.Lock()
@@ -266,7 +266,7 @@ func (c *Client[T]) load(seq base.Seq) (results chan<- base.AsyncResult,
 	return
 }
 
-func (c *Client[T]) flush(seq base.Seq, chFl chan error) (err error) {
+func (c *Client[T]) flush(seq core.Seq, chFl chan error) (err error) {
 	if swapped := atomic.CompareAndSwapUint32(c.flagFl, 0, 1); !swapped {
 		err = <-chFl
 		if err != nil {
@@ -296,7 +296,7 @@ func (c *Client[T]) changeChFl() {
 }
 
 func (c *Client[T]) rangeAndUnmemorize(
-	fn func(seq base.Seq, results chan<- base.AsyncResult),
+	fn func(seq core.Seq, results chan<- core.AsyncResult),
 ) {
 	c.muWt.Lock()
 	for seq, results := range c.waiting {
@@ -324,7 +324,7 @@ func (c *Client[T]) exit(cause error) (err error) {
 }
 
 func (c *Client[T]) unmemorizeAll(cause error) {
-	c.rangeAndUnmemorize(func(seq base.Seq, results chan<- base.AsyncResult) {
+	c.rangeAndUnmemorize(func(seq core.Seq, results chan<- core.AsyncResult) {
 		queueErrResult(seq, cause, results)
 	})
 }
@@ -360,9 +360,9 @@ Start:
 	}
 }
 
-func queueErrResult(seq base.Seq, err error, results chan<- base.AsyncResult) {
+func queueErrResult(seq core.Seq, err error, results chan<- core.AsyncResult) {
 	select {
-	case results <- base.AsyncResult{Seq: seq, Error: err}:
+	case results <- core.AsyncResult{Seq: seq, Error: err}:
 	default:
 	}
 }

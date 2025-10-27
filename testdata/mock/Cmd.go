@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	base "github.com/cmd-stream/core-go"
+	"github.com/cmd-stream/core-go"
 	"github.com/ymz-ncnk/mok"
 )
 
-type ExecFn func(ctx context.Context, seq base.Seq, at time.Time, receiver any,
-	proxy base.Proxy) (err error)
+type ExecFn func(ctx context.Context, seq core.Seq, at time.Time, receiver any,
+	proxy core.Proxy) (err error)
 type TimeoutFn func() (timeout time.Duration)
 
 func NewCmd() Cmd {
@@ -25,11 +25,11 @@ func (c Cmd) RegisterExec(fn ExecFn) Cmd {
 	return c
 }
 
-func (c Cmd) Exec(ctx context.Context, seq base.Seq, at time.Time, receiver any,
-	proxy base.Proxy,
+func (c Cmd) Exec(ctx context.Context, seq core.Seq, at time.Time, receiver any,
+	proxy core.Proxy,
 ) (err error) {
 	vals, err := c.Call("Exec", mok.SafeVal[context.Context](ctx), seq, at,
-		mok.SafeVal[any](receiver), mok.SafeVal[base.Proxy](proxy))
+		mok.SafeVal[any](receiver), mok.SafeVal[core.Proxy](proxy))
 	if err != nil {
 		panic(err)
 	}

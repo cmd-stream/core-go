@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	base "github.com/cmd-stream/core-go"
+	"github.com/cmd-stream/core-go"
 )
 
 // Delegate helps the client to send Commands and receive Results.
@@ -14,11 +14,11 @@ type Delegate[T any] interface {
 	RemoteAddr() net.Addr
 
 	SetSendDeadline(deadline time.Time) error
-	Send(seq base.Seq, cmd base.Cmd[T]) (n int, err error)
+	Send(seq core.Seq, cmd core.Cmd[T]) (n int, err error)
 	Flush() error
 
 	SetReceiveDeadline(deadline time.Time) error
-	Receive() (seq base.Seq, result base.Result, n int, err error)
+	Receive() (seq core.Seq, result core.Result, n int, err error)
 
 	Close() error
 }

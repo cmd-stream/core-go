@@ -3,13 +3,13 @@ package client
 import (
 	"testing"
 
-	base "github.com/cmd-stream/core-go"
+	"github.com/cmd-stream/core-go"
 )
 
 func TestOptions(t *testing.T) {
 	var (
 		o                                     = Options{}
-		wantCallback UnexpectedResultCallback = func(seq base.Seq, result base.Result) {}
+		wantCallback UnexpectedResultCallback = func(seq core.Seq, result core.Result) {}
 	)
 	Apply([]SetOption{WithUnexpectedResultCallback(wantCallback)}, &o)
 

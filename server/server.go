@@ -53,7 +53,7 @@ type Server struct {
 func (s *Server) ListenAndServe(addr string) (err error) {
 	listener, err := makeListener(addr, s.options)
 	if err != nil {
-		err = wrapErr(err)
+		err = NewServerError(err)
 		return
 	}
 	return s.Serve(listener)
@@ -70,7 +70,7 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 //   - If the server was closed, it returns ErrClosed.
 func (s *Server) Serve(listener core.Listener) (err error) {
 	if s.options.WorkersCount <= 0 {
-		err = wrapErr(ErrNoWorkers)
+		err = NewServerError(ErrNoWorkers)
 		return
 	}
 	conns := make(chan net.Conn, s.options.WorkersCount)
@@ -80,17 +80,17 @@ func (s *Server) Serve(listener core.Listener) (err error) {
 		jw    = jointwork.New(tasks)
 	)
 	if err = jw.Run(); err == nil {
-		return wrapErr(ErrShutdown)
+		return NewServerError(ErrShutdown)
 	}
 	multiErr, ok := err.(interface{ Get(i int) error })
 	if !ok {
-		return wrapErr(err)
+		return NewServerError(err)
 	}
 	firstErr := multiErr.Get(0)
 	if taskErr, ok := firstErr.(*jointwork.TaskError); ok {
-		return wrapErr(taskErr.Cause())
+		return NewServerError(taskErr.Cause())
 	}
-	return wrapErr(firstErr)
+	return NewServerError(firstErr)
 }
 
 // Shutdown stops the server from receiving new connections.
@@ -98,10 +98,10 @@ func (s *Server) Serve(listener core.Listener) (err error) {
 // If server is not serving returns ErrNotServing.
 func (s *Server) Shutdown() (err error) {
 	if !s.serving() {
-		return wrapErr(ErrNotServing)
+		return NewServerError(ErrNotServing)
 	}
 	if err = s.receiver.Shutdown(); err != nil {
-		return wrapErr(err)
+		return NewServerError(err)
 	}
 	return
 }
@@ -111,10 +111,10 @@ func (s *Server) Shutdown() (err error) {
 // If server is not serving returns ErrNotServing.
 func (s *Server) Close() (err error) {
 	if !s.serving() {
-		return wrapErr(ErrNotServing)
+		return NewServerError(ErrNotServing)
 	}
 	if err = s.receiver.Stop(); err != nil {
-		return wrapErr(err)
+		return NewServerError(err)
 	}
 	return
 }

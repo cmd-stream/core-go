@@ -20,6 +20,6 @@ var ErrShutdown = errors.New("shutdown")
 // ErrClosed happens when the server is closed while serving.
 var ErrClosed = errors.New("closed")
 
-func wrapErr(err error) error {
+func NewServerError(err error) error {
 	return fmt.Errorf(errorPrefix+"%w", err)
 }

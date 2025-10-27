@@ -19,7 +19,7 @@ import (
 func TestServer(t *testing.T) {
 	t.Run("Serving should fail if Conf.WorkersCount == 0", func(t *testing.T) {
 		var (
-			wantErr = wrapErr(ErrNoWorkers)
+			wantErr = NewServerError(ErrNoWorkers)
 			server  = &Server{}
 			err     = server.Serve(nil)
 		)
@@ -29,7 +29,7 @@ func TestServer(t *testing.T) {
 	t.Run("Server should be able to handle several connections",
 		func(t *testing.T) {
 			var (
-				wantErr       = wrapErr(ErrClosed)
+				wantErr       = NewServerError(ErrClosed)
 				wantHandleErr = errors.New("handle conn failed")
 				wg            = func() *sync.WaitGroup {
 					wg := &sync.WaitGroup{}
@@ -89,7 +89,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to shutdown the server after it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr         = wrapErr(ErrShutdown)
+				wantErr         = NewServerError(ErrShutdown)
 				wantLostConnErr = errors.New("conn closed by client")
 				wg              = func() *sync.WaitGroup {
 					wg := &sync.WaitGroup{}
@@ -146,7 +146,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to close the server after it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr         = wrapErr(ErrClosed)
+				wantErr         = NewServerError(ErrClosed)
 				wantLostConnErr = ErrClosed
 				wg              = func() *sync.WaitGroup {
 					wg := &sync.WaitGroup{}
@@ -204,7 +204,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to shutdown the server before it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr  = wrapErr(ErrShutdown)
+				wantErr  = NewServerError(ErrShutdown)
 				listener = func() cmock.Listener {
 					done := make(chan struct{})
 					listener := cmock.NewListener().RegisterAccept(
@@ -237,7 +237,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to close the server before it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr  = wrapErr(ErrClosed)
+				wantErr  = NewServerError(ErrClosed)
 				listener = func() cmock.Listener {
 					done := make(chan struct{})
 					listener := cmock.NewListener().RegisterAccept(
@@ -270,7 +270,7 @@ func TestServer(t *testing.T) {
 	t.Run("Shutdown should fail with an error, if server is not serving",
 		func(t *testing.T) {
 			var (
-				wantErr = wrapErr(ErrNotServing)
+				wantErr = NewServerError(ErrNotServing)
 				server  = New(nil, WithWorkersCount(1))
 				err     = server.Shutdown()
 			)
@@ -280,7 +280,7 @@ func TestServer(t *testing.T) {
 	t.Run("Close should fail with an error, if server is not serving",
 		func(t *testing.T) {
 			var (
-				wantErr = wrapErr(ErrNotServing)
+				wantErr = NewServerError(ErrNotServing)
 				server  = New(nil, WithWorkersCount(1))
 				err     = server.Close()
 			)

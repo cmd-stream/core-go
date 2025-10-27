@@ -4,13 +4,13 @@ import (
 	"net"
 	"time"
 
-	base "github.com/cmd-stream/core-go"
+	"github.com/cmd-stream/core-go"
 	"github.com/ymz-ncnk/mok"
 )
 
 type (
-	SendFn             func(seq base.Seq, result base.Result) (n int, err error)
-	SendWithDeadlineFn func(seq base.Seq, result base.Result,
+	SendFn             func(seq core.Seq, result core.Result) (n int, err error)
+	SendWithDeadlineFn func(seq core.Seq, result core.Result,
 		deadline time.Time) (n int, err error)
 )
 
@@ -60,7 +60,7 @@ func (p Proxy) RemoteAddr() (addr net.Addr) {
 	return
 }
 
-func (p Proxy) Send(seq base.Seq, result base.Result) (n int, err error) {
+func (p Proxy) Send(seq core.Seq, result core.Result) (n int, err error) {
 	vals, err := p.Call("Send", seq, result)
 	if err != nil {
 		panic(err)
@@ -70,7 +70,7 @@ func (p Proxy) Send(seq base.Seq, result base.Result) (n int, err error) {
 	return
 }
 
-func (p Proxy) SendWithDeadline(seq base.Seq, result base.Result,
+func (p Proxy) SendWithDeadline(seq core.Seq, result core.Result,
 	deadline time.Time,
 ) (n int, err error) {
 	vals, err := p.Call("SendWithDeadline", seq, result, deadline)
