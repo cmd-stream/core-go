@@ -217,11 +217,13 @@ func TestClient(t *testing.T) {
 
 	t.Run("Seq should be incremented even if Send fails", func(t *testing.T) {
 		var (
+			delegateErr = errors.New("Delegate.Send error")
+
 			wantSeq  core.Seq = 1
-			wantErr           = errors.New("Delegate.Send error")
+			wantErr           = wrapErr(delegateErr)
 			delegate          = mock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
-					return 1, wantErr
+					return 1, delegateErr
 				},
 			).RegisterReceive(
 				func() (seq core.Seq, result core.Result, n int, err error) {
@@ -313,11 +315,13 @@ func TestClient(t *testing.T) {
 	t.Run("Seq should be incremented even if SendWithDeadline fails",
 		func(t *testing.T) {
 			var (
+				delegateErr = errors.New("Delegate.Send error")
+
 				wantSeq  core.Seq = 1
-				wantErr           = errors.New("Delegate.Send error")
+				wantErr           = wrapErr(delegateErr)
 				delegate          = mock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
-						return wantErr
+						return delegateErr
 					},
 				).RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
@@ -341,10 +345,11 @@ func TestClient(t *testing.T) {
 	t.Run("If Delegate.SetSendDeadline fails with an error, SendWithDeadline should return it",
 		func(t *testing.T) {
 			var (
-				wantErr  = errors.New("Delegate.SetSendDeadline error")
-				delegate = mock.NewDelegate().RegisterSetSendDeadline(
+				delegateErr = errors.New("Delegate.SetSendDeadline error")
+				wantErr     = wrapErr(delegateErr)
+				delegate    = mock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
-						return wantErr
+						return delegateErr
 					},
 				).RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
@@ -536,8 +541,10 @@ func TestClient(t *testing.T) {
 	t.Run("If Delegate.Close fails with an error, Close should return it",
 		func(t *testing.T) {
 			var (
+				delegateErr = errors.New("Delegate.Close error")
+
 				receiveDone = make(chan struct{})
-				wantErr     = errors.New("Delegate.Close error")
+				wantErr     = wrapErr(delegateErr)
 				delegate    = mock.NewDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						<-receiveDone
@@ -546,7 +553,7 @@ func TestClient(t *testing.T) {
 					},
 				).RegisterClose(
 					func() (err error) {
-						return wantErr
+						return delegateErr
 					},
 				).RegisterClose(
 					func() (err error) { return nil },
@@ -565,7 +572,9 @@ func TestClient(t *testing.T) {
 	t.Run("If Delegate.Flush fails with an error, Send of all involved Commands should return error",
 		func(t *testing.T) {
 			var (
-				wantErr  = errors.New("flush error")
+				delegateErr = errors.New("flush error")
+
+				wantErr  = wrapErr(delegateErr)
 				cmd1     = cmock.NewCmd()
 				cmd2     = cmock.NewCmd()
 				cmd3     = cmock.NewCmd()
@@ -574,7 +583,7 @@ func TestClient(t *testing.T) {
 						return
 					},
 				).RegisterNFlush(3,
-					func() (err error) { return wantErr },
+					func() (err error) { return delegateErr },
 				).RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = errors.New("Delegate.Receive error")
@@ -591,9 +600,7 @@ func TestClient(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				_, _, err := client.Send(cmd1, nil)
-				if err != wantErr {
-					t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-				}
+				asserterror.EqualError(err, wantErr, t)
 			}()
 			wg.Add(1)
 			go func() {

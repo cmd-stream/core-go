@@ -19,7 +19,7 @@ import (
 func TestServer(t *testing.T) {
 	t.Run("Serving should fail if Conf.WorkersCount == 0", func(t *testing.T) {
 		var (
-			wantErr = ErrNoWorkers
+			wantErr = wrapErr(ErrNoWorkers)
 			server  = &Server{}
 			err     = server.Serve(nil)
 		)
@@ -29,7 +29,7 @@ func TestServer(t *testing.T) {
 	t.Run("Server should be able to handle several connections",
 		func(t *testing.T) {
 			var (
-				wantErr       = ErrClosed
+				wantErr       = wrapErr(ErrClosed)
 				wantHandleErr = errors.New("handle conn failed")
 				wg            = func() *sync.WaitGroup {
 					wg := &sync.WaitGroup{}
@@ -89,7 +89,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to shutdown the server after it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr         = ErrShutdown
+				wantErr         = wrapErr(ErrShutdown)
 				wantLostConnErr = errors.New("conn closed by client")
 				wg              = func() *sync.WaitGroup {
 					wg := &sync.WaitGroup{}
@@ -146,7 +146,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to close the server after it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr         = ErrClosed
+				wantErr         = wrapErr(ErrClosed)
 				wantLostConnErr = ErrClosed
 				wg              = func() *sync.WaitGroup {
 					wg := &sync.WaitGroup{}
@@ -204,7 +204,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to shutdown the server before it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr  = ErrShutdown
+				wantErr  = wrapErr(ErrShutdown)
 				listener = func() cmock.Listener {
 					done := make(chan struct{})
 					listener := cmock.NewListener().RegisterAccept(
@@ -237,7 +237,7 @@ func TestServer(t *testing.T) {
 	t.Run("We should be able to close the server before it receives a conn",
 		func(t *testing.T) {
 			var (
-				wantErr  = ErrClosed
+				wantErr  = wrapErr(ErrClosed)
 				listener = func() cmock.Listener {
 					done := make(chan struct{})
 					listener := cmock.NewListener().RegisterAccept(
@@ -270,7 +270,7 @@ func TestServer(t *testing.T) {
 	t.Run("Shutdown should fail with an error, if server is not serving",
 		func(t *testing.T) {
 			var (
-				wantErr = ErrNotServing
+				wantErr = wrapErr(ErrNotServing)
 				server  = New(nil, WithWorkersCount(1))
 				err     = server.Shutdown()
 			)
@@ -280,7 +280,7 @@ func TestServer(t *testing.T) {
 	t.Run("Close should fail with an error, if server is not serving",
 		func(t *testing.T) {
 			var (
-				wantErr = ErrNotServing
+				wantErr = wrapErr(ErrNotServing)
 				server  = New(nil, WithWorkersCount(1))
 				err     = server.Close()
 			)
@@ -311,9 +311,10 @@ func testAsyncErr(wantErr error, errs <-chan error, mocks []*mok.Mock,
 	case <-time.NewTimer(500 * time.Millisecond).C:
 		t.Error("test lasts too long")
 	case err := <-errs:
-		if err != wantErr {
-			t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-		}
+		asserterror.EqualError(err, wantErr, t)
+		// if err != wantErr {
+		// 	t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
+		// }
 	}
 	asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 }

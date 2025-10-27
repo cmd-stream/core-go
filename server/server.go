@@ -53,6 +53,7 @@ type Server struct {
 func (s *Server) ListenAndServe(addr string) (err error) {
 	listener, err := makeListener(addr, s.options)
 	if err != nil {
+		err = wrapErr(err)
 		return
 	}
 	return s.Serve(listener)
@@ -69,7 +70,8 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 //   - If the server was closed, it returns ErrClosed.
 func (s *Server) Serve(listener core.Listener) (err error) {
 	if s.options.WorkersCount <= 0 {
-		return ErrNoWorkers
+		err = wrapErr(ErrNoWorkers)
+		return
 	}
 	conns := make(chan net.Conn, s.options.WorkersCount)
 	s.setReceiver(listener, conns)
@@ -78,10 +80,17 @@ func (s *Server) Serve(listener core.Listener) (err error) {
 		jw    = jointwork.New(tasks)
 	)
 	if err = jw.Run(); err == nil {
-		return ErrShutdown
+		return wrapErr(ErrShutdown)
 	}
-	firstErr := err.(interface{ Get(i int) error }).Get(0)
-	return firstErr.(*jointwork.TaskError).Cause()
+	multiErr, ok := err.(interface{ Get(i int) error })
+	if !ok {
+		return wrapErr(err)
+	}
+	firstErr := multiErr.Get(0)
+	if taskErr, ok := firstErr.(*jointwork.TaskError); ok {
+		return wrapErr(taskErr.Cause())
+	}
+	return wrapErr(firstErr)
 }
 
 // Shutdown stops the server from receiving new connections.
@@ -89,9 +98,12 @@ func (s *Server) Serve(listener core.Listener) (err error) {
 // If server is not serving returns ErrNotServing.
 func (s *Server) Shutdown() (err error) {
 	if !s.serving() {
-		return ErrNotServing
+		return wrapErr(ErrNotServing)
 	}
-	return s.receiver.Shutdown()
+	if err = s.receiver.Shutdown(); err != nil {
+		return wrapErr(err)
+	}
+	return
 }
 
 // Close closes the server, all existing connections will be closed.
@@ -99,15 +111,18 @@ func (s *Server) Shutdown() (err error) {
 // If server is not serving returns ErrNotServing.
 func (s *Server) Close() (err error) {
 	if !s.serving() {
-		return ErrNotServing
+		return wrapErr(ErrNotServing)
 	}
-	return s.receiver.Stop()
+	if err = s.receiver.Stop(); err != nil {
+		return wrapErr(err)
+	}
+	return
 }
 
 func (s *Server) setReceiver(listener core.Listener, conns chan net.Conn) {
 	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.receiver = NewConnReceiver(listener, conns, s.options.ConnReceiver...)
-	s.mu.Unlock()
 }
 
 func (s *Server) makeTasks(conns chan net.Conn, delegate Delegate) (

@@ -1,6 +1,11 @@
 package server
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
+
+const errorPrefix = "cmdstream server: "
 
 // ErrNoWorkers happens when the server is configured with 0 workers.
 var ErrNoWorkers = errors.New("not positive Conf.WorkersCount")
@@ -14,3 +19,7 @@ var ErrShutdown = errors.New("shutdown")
 
 // ErrClosed happens when the server is closed while serving.
 var ErrClosed = errors.New("closed")
+
+func wrapErr(err error) error {
+	return fmt.Errorf(errorPrefix+"%w", err)
+}

@@ -59,9 +59,7 @@ func New[T any](delegate Delegate[T], ops ...SetOption) *Client[T] {
 // process by checking Client.Done():
 //
 //	err = client.Close()
-//	if err != nil {
-//	  ...
-//	}
+//	...
 //	select {
 //	case <-time.NewTimer(time.Second).C:
 //		err = errors.New("timeout exceeded")
@@ -111,10 +109,14 @@ func (c *Client[T]) Send(cmd base.Cmd[T], results chan<- base.AsyncResult) (
 	if err != nil {
 		c.muSn.Unlock()
 		c.Forget(seq)
+		err = wrapErr(err)
 		return
 	}
 	c.muSn.Unlock()
-	return seq, n, c.flush(seq, chFl)
+	if err = c.flush(seq, chFl); err != nil {
+		err = wrapErr(err)
+	}
+	return
 }
 
 // SendWithDeadline sends a Command with a specified deadline.
@@ -136,6 +138,7 @@ func (c *Client[T]) SendWithDeadline(cmd base.Cmd[T],
 	if err != nil {
 		c.muSn.Unlock()
 		c.Forget(seq)
+		err = wrapErr(err)
 		return
 	}
 	n, err = c.delegate.Send(seq, cmd)
@@ -145,7 +148,10 @@ func (c *Client[T]) SendWithDeadline(cmd base.Cmd[T],
 		return
 	}
 	c.muSn.Unlock()
-	return seq, n, c.flush(seq, chFl)
+	if err = c.flush(seq, chFl); err != nil {
+		err = wrapErr(err)
+	}
+	return
 }
 
 // Has checks if the Command with the specified sequence number has been sent
@@ -187,7 +193,7 @@ func (c *Client[T]) Close() (err error) {
 	c.state = closed
 	if err = c.delegate.Close(); err != nil {
 		c.state = inProgress
-		return
+		return wrapErr(err)
 	}
 	c.cancel()
 	return
