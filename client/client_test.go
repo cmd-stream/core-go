@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
-	mock "github.com/cmd-stream/core-go/client/testdata/mock"
-	cmock "github.com/cmd-stream/core-go/testdata/mock"
+	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
+	mocks "github.com/cmd-stream/testkit-go/mocks/core/client"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -21,19 +21,19 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantSeq     core.Seq = 1
-				wantCmd              = cmock.NewCmd()
+				wantCmd              = cmocks.NewCmd()
 				wantSendN            = 1
 				wantSendErr error    = nil
-				wantResult1          = cmock.NewResult().RegisterLastOne(
+				wantResult1          = cmocks.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return false },
 				)
 				wantBytesRead1 = 2
-				wantResult2    = cmock.NewResult().RegisterLastOne(
+				wantResult2    = cmocks.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				wantBytesRead2 = 3
 				receiveDone    = make(chan struct{})
-				delegate       = mock.NewDelegate().RegisterSend(
+				delegate       = mocks.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						asserterror.Equal(seq, wantSeq, t)
 						asserterror.EqualDeep(cmd, wantCmd, t)
@@ -88,17 +88,17 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				done        = make(chan struct{})
-				wantCmd     = cmock.NewCmd()
-				wantResult1 = cmock.NewResult().RegisterLastOne(
+				wantCmd     = cmocks.NewCmd()
+				wantResult1 = cmocks.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				wantResult1N = 1
-				wantResult2  = cmock.NewResult().RegisterLastOne(
+				wantResult2  = cmocks.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				wantBytesRead2 = 2
 				receiveDone    = make(chan struct{})
-				delegate       = mock.NewDelegate().RegisterSend(
+				delegate       = mocks.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return
 					},
@@ -144,10 +144,10 @@ func TestClient(t *testing.T) {
 		var (
 			wantSeq1    core.Seq = 1
 			wantSeq2    core.Seq = 2
-			wantCmd1             = cmock.NewCmd()
-			wantCmd2             = cmock.NewCmd()
+			wantCmd1             = cmocks.NewCmd()
+			wantCmd2             = cmocks.NewCmd()
 			receiveDone          = make(chan struct{})
-			delegate             = mock.NewDelegate().RegisterSend(
+			delegate             = mocks.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					asserterror.Equal(seq, wantSeq1, t)
 					asserterror.EqualDeep(cmd, wantCmd1, t)
@@ -189,7 +189,7 @@ func TestClient(t *testing.T) {
 	t.Run("Send should memorize cmd", func(t *testing.T) {
 		var (
 			receiveDone = make(chan struct{})
-			delegate    = mock.NewDelegate().RegisterSend(
+			delegate    = mocks.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return
 				},
@@ -221,7 +221,7 @@ func TestClient(t *testing.T) {
 
 			wantSeq  core.Seq = 1
 			wantErr           = NewClientError(delegateErr)
-			delegate          = mock.NewDelegate().RegisterSend(
+			delegate          = mocks.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return 1, delegateErr
 				},
@@ -247,7 +247,7 @@ func TestClient(t *testing.T) {
 	t.Run("If Send fails cmd should be forgotten", func(t *testing.T) {
 		var (
 			receiveDone = make(chan struct{})
-			delegate    = mock.NewDelegate().RegisterSend(
+			delegate    = mocks.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return 0, errors.New("Delegate.Send error")
 				},
@@ -275,9 +275,9 @@ func TestClient(t *testing.T) {
 		var (
 			wantSeq      core.Seq = 1
 			wantDeadline          = time.Now()
-			wantCmd               = cmock.NewCmd()
+			wantCmd               = cmocks.NewCmd()
 			receiveDone           = make(chan struct{})
-			delegate              = mock.NewDelegate().RegisterSetSendDeadline(
+			delegate              = mocks.NewDelegate().RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
 					asserterror.SameTime(deadline, wantDeadline, delta, t)
 					return nil
@@ -319,7 +319,7 @@ func TestClient(t *testing.T) {
 
 				wantSeq  core.Seq = 1
 				wantErr           = NewClientError(delegateErr)
-				delegate          = mock.NewDelegate().RegisterSetSendDeadline(
+				delegate          = mocks.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return delegateErr
 					},
@@ -347,7 +347,7 @@ func TestClient(t *testing.T) {
 			var (
 				delegateErr = errors.New("Delegate.SetSendDeadline error")
 				wantErr     = NewClientError(delegateErr)
-				delegate    = mock.NewDelegate().RegisterSetSendDeadline(
+				delegate    = mocks.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return delegateErr
 					},
@@ -372,7 +372,7 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("Delegate.Send error")
-				delegate = mock.NewDelegate().RegisterSetSendDeadline(
+				delegate = mocks.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -401,7 +401,7 @@ func TestClient(t *testing.T) {
 	t.Run("Client should forget cmd, if SendWithDeadline failed, because of Delegate.SetSendDeadline",
 		func(t *testing.T) {
 			var (
-				delegate = mock.NewDelegate().RegisterSetSendDeadline(
+				delegate = mocks.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return errors.New("Delegate.SetSendDeadline error")
 					},
@@ -426,7 +426,7 @@ func TestClient(t *testing.T) {
 	t.Run("Client should forget cmd, if SendWithDeadline failed, because of Delegate.Send",
 		func(t *testing.T) {
 			var (
-				delegate = mock.NewDelegate().RegisterSetSendDeadline(
+				delegate = mocks.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -455,9 +455,9 @@ func TestClient(t *testing.T) {
 
 	t.Run("We should be able to forget cmd", func(t *testing.T) {
 		var (
-			cmd         = cmock.NewCmd()
+			cmd         = cmocks.NewCmd()
 			receiveDone = make(chan struct{})
-			delegate    = mock.NewDelegate().RegisterSend(
+			delegate    = mocks.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return
 				},
@@ -488,7 +488,7 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("Delegate.Receive error")
-				delegate = mock.NewDelegate().RegisterReceive(
+				delegate = mocks.NewDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = wantErr
 						return
@@ -508,12 +508,12 @@ func TestClient(t *testing.T) {
 	t.Run("We should be able to close the client while it queues a result",
 		func(t *testing.T) {
 			var (
-				wantCmd    = cmock.NewCmd()
-				wantResult = cmock.NewResult().RegisterLastOne(
+				wantCmd    = cmocks.NewCmd()
+				wantResult = cmocks.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				results  = make(chan core.AsyncResult)
-				delegate = mock.NewDelegate().RegisterSend(
+				delegate = mocks.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						err = errors.New("Delegate.Send error")
 						return
@@ -545,7 +545,7 @@ func TestClient(t *testing.T) {
 
 				receiveDone = make(chan struct{})
 				wantErr     = NewClientError(delegateErr)
-				delegate    = mock.NewDelegate().RegisterReceive(
+				delegate    = mocks.NewDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						<-receiveDone
 						err = errors.New("Delegate.Receive error")
@@ -575,10 +575,10 @@ func TestClient(t *testing.T) {
 				delegateErr = errors.New("flush error")
 
 				wantErr  = NewClientError(delegateErr)
-				cmd1     = cmock.NewCmd()
-				cmd2     = cmock.NewCmd()
-				cmd3     = cmock.NewCmd()
-				delegate = mock.NewDelegate().RegisterNSend(3,
+				cmd1     = cmocks.NewCmd()
+				cmd2     = cmocks.NewCmd()
+				cmd3     = cmocks.NewCmd()
+				delegate = mocks.NewDelegate().RegisterNSend(3,
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return
 					},
@@ -630,7 +630,7 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				reconected = make(chan struct{})
-				delegate   = mock.NewReconnectDelegate().RegisterReceive(
+				delegate   = mocks.NewReconnectDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = net.ErrClosed
 						return
@@ -656,7 +656,7 @@ func TestClient(t *testing.T) {
 	t.Run("If the client is closed it should not reconnect", func(t *testing.T) {
 		var (
 			receiveDone = make(chan struct{})
-			delegate    = mock.NewReconnectDelegate().RegisterReceive(
+			delegate    = mocks.NewReconnectDelegate().RegisterReceive(
 				func() (seq core.Seq, result core.Result, n int, err error) {
 					<-receiveDone
 					err = ErrClosed
@@ -679,7 +679,7 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("reconnection error")
-				delegate = mock.NewReconnectDelegate().RegisterReceive(
+				delegate = mocks.NewReconnectDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = net.ErrClosed
 						return
@@ -702,7 +702,7 @@ func TestClient(t *testing.T) {
 	t.Run("Upon creation, the client should call KeepaliveDelegate.Keepalive()",
 		func(t *testing.T) {
 			var (
-				delegate = mock.NewKeepaliveDelegate().RegisterKeepalive(
+				delegate = mocks.NewKeepaliveDelegate().RegisterKeepalive(
 					func(muSn *sync.Mutex) {},
 				).RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/cmd-stream/core-go/server/testdata/mock"
-	cmock "github.com/cmd-stream/core-go/testdata/mock"
+	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
+	mocks "github.com/cmd-stream/testkit-go/mocks/core/server"
 	"github.com/ymz-ncnk/mok"
 )
 
@@ -22,7 +22,7 @@ func TestWorker(t *testing.T) {
 				wg       = &sync.WaitGroup{}
 				conn1    = makeConn(addr)
 				conn2    = makeConn(addr)
-				delegate = mock.NewDelegate().RegisterHandle(
+				delegate = mocks.NewDelegate().RegisterHandle(
 					func(ctx context.Context, conn net.Conn) (err error) {
 						if conn != conn1 {
 							t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
@@ -52,9 +52,9 @@ func TestWorker(t *testing.T) {
 			var (
 				wantErr  = errors.New("handle conn failed")
 				wg       = &sync.WaitGroup{}
-				conn1    = cmock.NewConn()
-				conn2    = cmock.NewConn()
-				delegate = mock.NewDelegate().RegisterHandle(
+				conn1    = cmocks.NewConn()
+				conn2    = cmocks.NewConn()
+				delegate = mocks.NewDelegate().RegisterHandle(
 					func(ctx context.Context, conn net.Conn) (err error) {
 						defer wg.Done()
 						if conn != conn1 {
@@ -142,7 +142,7 @@ func TestWorker(t *testing.T) {
 		var (
 			wantErr  = ErrClosed
 			conns    = make(chan net.Conn)
-			delegate = mock.NewDelegate()
+			delegate = mocks.NewDelegate()
 			mocks    = []*mok.Mock{delegate.Mock}
 			worker   = NewWorker(conns, delegate, nil)
 		)
@@ -157,7 +157,7 @@ func TestWorker(t *testing.T) {
 		var (
 			wantErr  error = nil
 			conns          = make(chan net.Conn)
-			delegate       = mock.NewDelegate()
+			delegate       = mocks.NewDelegate()
 			mocks          = []*mok.Mock{delegate.Mock}
 			worker         = NewWorker(conns, delegate, nil)
 		)
@@ -177,7 +177,7 @@ func runWorker(worker Worker) (errs chan error) {
 	return errs
 }
 
-func testWorker(delegate mock.Delegate, conn1, conn2 cmock.Conn,
+func testWorker(delegate mocks.Delegate, conn1, conn2 cmocks.Conn,
 	lostConnCallback LostConnCallback,
 	wg *sync.WaitGroup,
 	t *testing.T,

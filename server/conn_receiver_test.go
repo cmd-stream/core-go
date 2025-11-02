@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	cmock "github.com/cmd-stream/core-go/testdata/mock"
+	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
 	"github.com/ymz-ncnk/mok"
 
 	asserterror "github.com/ymz-ncnk/assert/error"
@@ -21,7 +21,7 @@ func TestConnReceiver(t *testing.T) {
 				wantErr              = errors.New("SetDeadline error")
 				startTime            = time.Now()
 				wantFirstConnTimeout = time.Second
-				listener             = cmock.NewListener().RegisterSetDeadline(
+				listener             = cmocks.NewListener().RegisterSetDeadline(
 					func(deadline time.Time) (err error) {
 						wantDeadline := startTime.Add(wantFirstConnTimeout)
 						asserterror.SameTime(deadline, wantDeadline, delta, t)
@@ -41,7 +41,7 @@ func TestConnReceiver(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("accept error")
-				listener = cmock.NewListener().RegisterAccept(
+				listener = cmocks.NewListener().RegisterAccept(
 					func() (net.Conn, error) { return nil, wantErr },
 				)
 				conns    = make(chan net.Conn)
@@ -56,12 +56,12 @@ func TestConnReceiver(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("set deadline error")
-				wantConn = cmock.NewConn().RegisterClose(
+				wantConn = cmocks.NewConn().RegisterClose(
 					func() (err error) { return nil },
 				)
 				startTime            = time.Now()
 				wantFirstConnTimeout = time.Second
-				listener             = cmock.NewListener().RegisterSetDeadline(
+				listener             = cmocks.NewListener().RegisterSetDeadline(
 					func(deadline time.Time) (err error) {
 						wantDeadline := startTime.Add(wantFirstConnTimeout)
 						asserterror.SameTime(deadline, wantDeadline, delta, t)
@@ -90,7 +90,7 @@ func TestConnReceiver(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("set deadline error")
-				listener = cmock.NewListener().RegisterAccept(
+				listener = cmocks.NewListener().RegisterAccept(
 					func() (conn net.Conn, err error) {
 						return nil, wantErr
 					},
@@ -106,10 +106,10 @@ func TestConnReceiver(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("set deadline error")
-				wantConn = cmock.NewConn().RegisterClose(
+				wantConn = cmocks.NewConn().RegisterClose(
 					func() (err error) { return nil },
 				)
-				listener = cmock.NewListener().RegisterAccept(
+				listener = cmocks.NewListener().RegisterAccept(
 					func() (conn net.Conn, err error) {
 						return wantConn, nil
 					},
@@ -129,9 +129,9 @@ func TestConnReceiver(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				done     = make(chan struct{})
-				conn1    = cmock.NewConn()
-				conn2    = cmock.NewConn()
-				listener = cmock.NewListener().RegisterAccept(
+				conn1    = cmocks.NewConn()
+				conn2    = cmocks.NewConn()
+				listener = cmocks.NewListener().RegisterAccept(
 					func() (net.Conn, error) { return conn1, nil },
 				).RegisterAccept(
 					func() (net.Conn, error) { return conn2, nil },
@@ -207,9 +207,9 @@ func testStopWhileAccept(shutdown bool, t *testing.T) {
 		wantErr = nil
 	}
 	var (
-		listener = func() cmock.Listener {
+		listener = func() cmocks.Listener {
 			done := make(chan error)
-			return cmock.NewListener().RegisterAccept(
+			return cmocks.NewListener().RegisterAccept(
 				func() (net.Conn, error) {
 					<-done
 					if shutdown {
@@ -248,13 +248,13 @@ func testStopWhileQueueConn(shutdown bool, t *testing.T) {
 	}
 	var (
 		done = make(chan error)
-		conn = func() cmock.Conn {
-			conn := cmock.NewConn().RegisterClose(
+		conn = func() cmocks.Conn {
+			conn := cmocks.NewConn().RegisterClose(
 				func() (err error) { return nil },
 			)
 			return conn
 		}()
-		listener = cmock.NewListener().RegisterAccept(
+		listener = cmocks.NewListener().RegisterAccept(
 			func() (net.Conn, error) {
 				return conn, nil
 			},
