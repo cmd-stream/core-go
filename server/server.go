@@ -1,7 +1,7 @@
-// Package server provides a configurable cmd-stream-go server implementation.
+// Package server provides a configurable cmd-stream server implementation.
 //
 // The Server accepts client connections and delegates Command handling to a
-// user-provided ServerDelegate.
+// user-provided Delegate.
 package server
 
 import (
@@ -41,7 +41,7 @@ func NewWithWorkers(delegate Delegate, factory WorkersFactory, ops ...SetOption)
 // Server represents a cmd-stream server.
 //
 // It utilizes a configurable number of Workers to manage client connections
-// using a specified ServerDelegate.
+// using a specified Delegate.
 type Server struct {
 	delegate Delegate
 	factory  WorkersFactory

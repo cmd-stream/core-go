@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
-	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
-	mocks "github.com/cmd-stream/testkit-go/mocks/core/server"
+	"github.com/cmd-stream/core-go/test/mock"
+	srvmock "github.com/cmd-stream/core-go/test/mock/server"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	assertfatal "github.com/ymz-ncnk/assert/fatal"
 	"github.com/ymz-ncnk/mok"
@@ -23,7 +23,7 @@ func TestServer(t *testing.T) {
 			server  = &Server{}
 			err     = server.Serve(nil)
 		)
-		asserterror.EqualError(err, wantErr, t)
+		asserterror.EqualError(t, err, wantErr)
 	})
 
 	t.Run("Server should be able to handle several connections",
@@ -40,20 +40,20 @@ func TestServer(t *testing.T) {
 				conn1    = makeConn(addr1)
 				addr2    = &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9900}
 				conn2    = makeConn(addr2)
-				delegate = mocks.NewDelegate().RegisterNHandle(2,
+				delegate = srvmock.NewDelegate().RegisterNHandle(2,
 					func(ctx context.Context, conn net.Conn) (err error) {
 						// TODO
 						return wantHandleErr
 					},
 				)
 				callback = func(addr net.Addr, err error) {
-					asserterror.EqualError(err, wantHandleErr, t)
+					asserterror.EqualError(t, err, wantHandleErr)
 					wg.Done()
 				}
 				listenerErr = errors.New("listener closed")
-				listener    = func() cmocks.Listener {
+				listener    = func() mock.Listener {
 					done := make(chan struct{})
-					return cmocks.NewListener().RegisterNSetDeadline(2,
+					return mock.NewListener().RegisterNSetDeadline(2,
 						func(t time.Time) error { return nil },
 					).RegisterAccept(
 						func() (net.Conn, error) { return conn1, nil },
@@ -105,11 +105,11 @@ func TestServer(t *testing.T) {
 					if a != addr {
 						t.Errorf("unexpected addr, want '%v' actual '%v'", addr, a)
 					}
-					asserterror.EqualError(err, wantLostConnErr, t)
+					asserterror.EqualError(t, err, wantLostConnErr)
 				}
-				listener = func() cmocks.Listener {
+				listener = func() mock.Listener {
 					listenerDone := make(chan struct{})
-					return cmocks.NewListener().RegisterAccept(
+					return mock.NewListener().RegisterAccept(
 						func() (net.Conn, error) { return conn, nil },
 					).RegisterAccept(
 						func() (net.Conn, error) {
@@ -121,7 +121,7 @@ func TestServer(t *testing.T) {
 						func() error { close(listenerDone); return nil },
 					)
 				}()
-				delegate = mocks.NewDelegate().RegisterHandle(
+				delegate = srvmock.NewDelegate().RegisterHandle(
 					func(ctx context.Context, conn net.Conn) (err error) {
 						wg.Done()
 						time.Sleep(100 * time.Millisecond)
@@ -138,7 +138,7 @@ func TestServer(t *testing.T) {
 
 			wg.Wait()
 			err := server.Shutdown()
-			assertfatal.EqualError(err, nil, t)
+			assertfatal.EqualError(t, err, nil)
 
 			testAsyncErr(wantErr, errs, mocks, t)
 		})
@@ -165,9 +165,9 @@ func TestServer(t *testing.T) {
 							err)
 					}
 				}
-				listener = func() cmocks.Listener {
+				listener = func() mock.Listener {
 					listenerDone := make(chan struct{})
-					return cmocks.NewListener().RegisterAccept(
+					return mock.NewListener().RegisterAccept(
 						func() (net.Conn, error) { return conn, nil },
 					).RegisterAccept(
 						func() (net.Conn, error) {
@@ -179,7 +179,7 @@ func TestServer(t *testing.T) {
 						func() error { close(listenerDone); return nil },
 					)
 				}()
-				delegate = mocks.NewDelegate().RegisterHandle(
+				delegate = srvmock.NewDelegate().RegisterHandle(
 					func(ctx context.Context, conn net.Conn) (err error) {
 						wg.Done()
 						<-ctx.Done()
@@ -196,7 +196,7 @@ func TestServer(t *testing.T) {
 
 			wg.Wait()
 			err := server.Close()
-			assertfatal.EqualError(err, nil, t)
+			assertfatal.EqualError(t, err, nil)
 
 			testAsyncErr(wantErr, errs, mocks, t)
 		})
@@ -205,9 +205,9 @@ func TestServer(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = NewServerError(ErrShutdown)
-				listener = func() cmocks.Listener {
+				listener = func() mock.Listener {
 					done := make(chan struct{})
-					listener := cmocks.NewListener().RegisterAccept(
+					listener := mock.NewListener().RegisterAccept(
 						func() (conn net.Conn, err error) {
 							<-done
 							err = errors.New("listener closed")
@@ -221,7 +221,7 @@ func TestServer(t *testing.T) {
 					)
 					return listener
 				}()
-				delegate = mocks.NewDelegate()
+				delegate = srvmock.NewDelegate()
 				mocks    = []*mok.Mock{listener.Mock, delegate.Mock}
 			)
 			server := New(delegate, WithWorkersCount(1))
@@ -229,7 +229,7 @@ func TestServer(t *testing.T) {
 
 			time.Sleep(100 * time.Millisecond)
 			err := server.Shutdown()
-			assertfatal.EqualError(err, nil, t)
+			assertfatal.EqualError(t, err, nil)
 
 			testAsyncErr(wantErr, errs, mocks, t)
 		})
@@ -238,9 +238,9 @@ func TestServer(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr  = NewServerError(ErrClosed)
-				listener = func() cmocks.Listener {
+				listener = func() mock.Listener {
 					done := make(chan struct{})
-					listener := cmocks.NewListener().RegisterAccept(
+					listener := mock.NewListener().RegisterAccept(
 						func() (conn net.Conn, err error) {
 							<-done
 							err = errors.New("listener closed")
@@ -254,7 +254,7 @@ func TestServer(t *testing.T) {
 					)
 					return listener
 				}()
-				delegate = mocks.NewDelegate()
+				delegate = srvmock.NewDelegate()
 				mocks    = []*mok.Mock{listener.Mock, delegate.Mock}
 			)
 			server := New(delegate, WithWorkersCount(1))
@@ -262,7 +262,7 @@ func TestServer(t *testing.T) {
 
 			time.Sleep(100 * time.Millisecond)
 			err := server.Close()
-			assertfatal.EqualError(err, nil, t)
+			assertfatal.EqualError(t, err, nil)
 
 			testAsyncErr(wantErr, errs, mocks, t)
 		})
@@ -274,7 +274,7 @@ func TestServer(t *testing.T) {
 				server  = New(nil, WithWorkersCount(1))
 				err     = server.Shutdown()
 			)
-			assertfatal.EqualError(err, wantErr, t)
+			assertfatal.EqualError(t, err, wantErr)
 		})
 
 	t.Run("Close should fail with an error, if server is not serving",
@@ -284,7 +284,7 @@ func TestServer(t *testing.T) {
 				server  = New(nil, WithWorkersCount(1))
 				err     = server.Close()
 			)
-			assertfatal.EqualError(err, wantErr, t)
+			assertfatal.EqualError(t, err, wantErr)
 		})
 }
 
@@ -300,8 +300,8 @@ func startServer(server *Server, listener core.Listener) (
 	return ch
 }
 
-func makeConn(addr net.Addr) cmocks.Conn {
-	return cmocks.NewConn().RegisterRemoteAddr(func() net.Addr { return addr })
+func makeConn(addr net.Addr) mock.Conn {
+	return mock.NewConn().RegisterRemoteAddr(func() net.Addr { return addr })
 }
 
 func testAsyncErr(wantErr error, errs <-chan error, mocks []*mok.Mock,
@@ -311,10 +311,10 @@ func testAsyncErr(wantErr error, errs <-chan error, mocks []*mok.Mock,
 	case <-time.NewTimer(500 * time.Millisecond).C:
 		t.Error("test lasts too long")
 	case err := <-errs:
-		asserterror.EqualError(err, wantErr, t)
+		asserterror.EqualError(t, err, wantErr)
 		// if err != wantErr {
 		// 	t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
 		// }
 	}
-	asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+	asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 }

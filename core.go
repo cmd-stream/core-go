@@ -1,5 +1,5 @@
-// Package core contains the definitions for both cmd-stream-go client and
+// Package core contains the definitions for both cmd-stream client and
 // server.
 //
-// It provides interfaces such as Cmd, Result, and Proxy.
+// Also it provides interfaces such as Cmd, Result, and Proxy.
 package core

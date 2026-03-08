@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
-	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
-	mocks "github.com/cmd-stream/testkit-go/mocks/core/client"
+	"github.com/cmd-stream/core-go/test/mock"
+	clnmock "github.com/cmd-stream/core-go/test/mock/client"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -21,22 +21,22 @@ func TestClient(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantSeq     core.Seq = 1
-				wantCmd              = cmocks.NewCmd()
+				wantCmd              = mock.NewCmd()
 				wantSendN            = 1
 				wantSendErr error    = nil
-				wantResult1          = cmocks.NewResult().RegisterLastOne(
+				wantResult1          = mock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return false },
 				)
 				wantBytesRead1 = 2
-				wantResult2    = cmocks.NewResult().RegisterLastOne(
+				wantResult2    = mock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				wantBytesRead2 = 3
 				receiveDone    = make(chan struct{})
-				delegate       = mocks.NewDelegate().RegisterSend(
+				delegate       = clnmock.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
-						asserterror.Equal(seq, wantSeq, t)
-						asserterror.EqualDeep(cmd, wantCmd, t)
+						asserterror.Equal(t, seq, wantSeq)
+						asserterror.EqualDeep(t, cmd, wantCmd)
 						return wantSendN, nil
 					},
 				).RegisterFlush(
@@ -66,39 +66,39 @@ func TestClient(t *testing.T) {
 				results = make(chan core.AsyncResult, 2)
 			)
 			seq, n, err := client.Send(wantCmd, results)
-			asserterror.EqualError(err, wantSendErr, t)
-			asserterror.Equal(seq, wantSeq, t)
-			asserterror.Equal(n, wantSendN, t)
-			asserterror.Equal(client.Has(seq), true, t)
+			asserterror.EqualError(t, err, wantSendErr)
+			asserterror.Equal(t, seq, wantSeq)
+			asserterror.Equal(t, n, wantSendN)
+			asserterror.Equal(t, client.Has(seq), true)
 			close(receiveDone)
 			waitDone(client.Done(), t)
 
 			result1 := <-results
-			asserterror.EqualDeep(result1.Result, wantResult1, t)
-			asserterror.Equal(result1.BytesRead, wantBytesRead1, t)
+			asserterror.EqualDeep(t, result1.Result, wantResult1)
+			asserterror.Equal(t, result1.BytesRead, wantBytesRead1)
 
 			result2 := <-results
-			asserterror.EqualDeep(result2.Result, wantResult2, t)
-			asserterror.Equal(result2.BytesRead, wantBytesRead2, t)
+			asserterror.EqualDeep(t, result2.Result, wantResult2)
+			asserterror.Equal(t, result2.BytesRead, wantBytesRead2)
 
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("When the client receives the last one Result it should forget cmd",
 		func(t *testing.T) {
 			var (
 				done        = make(chan struct{})
-				wantCmd     = cmocks.NewCmd()
-				wantResult1 = cmocks.NewResult().RegisterLastOne(
+				wantCmd     = mock.NewCmd()
+				wantResult1 = mock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				wantResult1N = 1
-				wantResult2  = cmocks.NewResult().RegisterLastOne(
+				wantResult2  = mock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				wantBytesRead2 = 2
 				receiveDone    = make(chan struct{})
-				delegate       = mocks.NewDelegate().RegisterSend(
+				delegate       = clnmock.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return
 					},
@@ -126,7 +126,7 @@ func TestClient(t *testing.T) {
 					delegate.Mock,
 				}
 				callback = func(seq core.Seq, result core.Result) {
-					asserterror.EqualDeep(result, wantResult2, t)
+					asserterror.EqualDeep(t, result, wantResult2)
 					close(done)
 				}
 				client  = New(delegate, WithUnexpectedResultCallback(callback))
@@ -137,28 +137,28 @@ func TestClient(t *testing.T) {
 			close(receiveDone)
 			waitDone(done, t)
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Send should increment seq", func(t *testing.T) {
 		var (
 			wantSeq1    core.Seq = 1
 			wantSeq2    core.Seq = 2
-			wantCmd1             = cmocks.NewCmd()
-			wantCmd2             = cmocks.NewCmd()
+			wantCmd1             = mock.NewCmd()
+			wantCmd2             = mock.NewCmd()
 			receiveDone          = make(chan struct{})
-			delegate             = mocks.NewDelegate().RegisterSend(
+			delegate             = clnmock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
-					asserterror.Equal(seq, wantSeq1, t)
-					asserterror.EqualDeep(cmd, wantCmd1, t)
+					asserterror.Equal(t, seq, wantSeq1)
+					asserterror.EqualDeep(t, cmd, wantCmd1)
 					return
 				},
 			).RegisterFlush(
 				func() (err error) { return nil },
 			).RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
-					asserterror.Equal(seq, wantSeq2, t)
-					asserterror.EqualDeep(cmd, wantCmd2, t)
+					asserterror.Equal(t, seq, wantSeq2)
+					asserterror.EqualDeep(t, cmd, wantCmd2)
 					return
 				},
 			).RegisterReceive(
@@ -176,20 +176,20 @@ func TestClient(t *testing.T) {
 			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(wantCmd1, nil)
-		asserterror.Equal(seq, wantSeq1, t)
+		asserterror.Equal(t, seq, wantSeq1)
 
 		seq, _, _ = client.Send(wantCmd2, nil)
-		asserterror.Equal(seq, wantSeq2, t)
+		asserterror.Equal(t, seq, wantSeq2)
 
 		close(receiveDone)
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("Send should memorize cmd", func(t *testing.T) {
 		var (
 			receiveDone = make(chan struct{})
-			delegate    = mocks.NewDelegate().RegisterSend(
+			delegate    = clnmock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return
 				},
@@ -208,11 +208,11 @@ func TestClient(t *testing.T) {
 			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(nil, nil)
-		asserterror.Equal(client.Has(seq), true, t)
+		asserterror.Equal(t, client.Has(seq), true)
 
 		close(receiveDone)
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("Seq should be incremented even if Send fails", func(t *testing.T) {
@@ -221,7 +221,7 @@ func TestClient(t *testing.T) {
 
 			wantSeq  core.Seq = 1
 			wantErr           = NewClientError(delegateErr)
-			delegate          = mocks.NewDelegate().RegisterSend(
+			delegate          = clnmock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return 1, delegateErr
 				},
@@ -237,17 +237,17 @@ func TestClient(t *testing.T) {
 			client = New(delegate, nil)
 		)
 		seq, _, err := client.Send(nil, nil)
-		asserterror.EqualError(err, wantErr, t)
-		asserterror.Equal(seq, wantSeq, t)
+		asserterror.EqualError(t, err, wantErr)
+		asserterror.Equal(t, seq, wantSeq)
 
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("If Send fails cmd should be forgotten", func(t *testing.T) {
 		var (
 			receiveDone = make(chan struct{})
-			delegate    = mocks.NewDelegate().RegisterSend(
+			delegate    = clnmock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return 0, errors.New("Delegate.Send error")
 				},
@@ -264,28 +264,28 @@ func TestClient(t *testing.T) {
 			client = New(delegate, nil)
 		)
 		seq, _, _ := client.Send(nil, nil)
-		asserterror.Equal(client.Has(seq), false, t)
+		asserterror.Equal(t, client.Has(seq), false)
 
 		close(receiveDone)
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("We should be able to send cmd by SendWithDeadline", func(t *testing.T) {
 		var (
 			wantSeq      core.Seq = 1
 			wantDeadline          = time.Now()
-			wantCmd               = cmocks.NewCmd()
+			wantCmd               = mock.NewCmd()
 			receiveDone           = make(chan struct{})
-			delegate              = mocks.NewDelegate().RegisterSetSendDeadline(
+			delegate              = clnmock.NewDelegate().RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
-					asserterror.SameTime(deadline, wantDeadline, delta, t)
+					asserterror.SameTime(t, deadline, wantDeadline, delta)
 					return nil
 				},
 			).RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
-					asserterror.Equal(seq, wantSeq, t)
-					asserterror.EqualDeep(cmd, wantCmd, t)
+					asserterror.Equal(t, seq, wantSeq)
+					asserterror.EqualDeep(t, cmd, wantCmd)
 					return
 				},
 			).RegisterFlush(
@@ -303,13 +303,13 @@ func TestClient(t *testing.T) {
 			client = New(delegate, nil)
 		)
 		seq, _, err := client.SendWithDeadline(wantCmd, nil, wantDeadline)
-		asserterror.EqualError(err, nil, t)
-		asserterror.Equal(seq, wantSeq, t)
-		asserterror.Equal(client.Has(seq), true, t)
+		asserterror.EqualError(t, err, nil)
+		asserterror.Equal(t, seq, wantSeq)
+		asserterror.Equal(t, client.Has(seq), true)
 
 		close(receiveDone)
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("Seq should be incremented even if SendWithDeadline fails",
@@ -319,7 +319,7 @@ func TestClient(t *testing.T) {
 
 				wantSeq  core.Seq = 1
 				wantErr           = NewClientError(delegateErr)
-				delegate          = mocks.NewDelegate().RegisterSetSendDeadline(
+				delegate          = clnmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return delegateErr
 					},
@@ -335,11 +335,11 @@ func TestClient(t *testing.T) {
 				client = New(delegate, nil)
 			)
 			seq, _, err := client.SendWithDeadline(nil, nil, time.Time{})
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.Equal(seq, wantSeq, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.Equal(t, seq, wantSeq)
 
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Delegate.SetSendDeadline fails with an error, SendWithDeadline should return it",
@@ -347,7 +347,7 @@ func TestClient(t *testing.T) {
 			var (
 				delegateErr = errors.New("Delegate.SetSendDeadline error")
 				wantErr     = NewClientError(delegateErr)
-				delegate    = mocks.NewDelegate().RegisterSetSendDeadline(
+				delegate    = clnmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return delegateErr
 					},
@@ -363,16 +363,16 @@ func TestClient(t *testing.T) {
 				client = New(delegate, nil)
 			)
 			_, _, err := client.SendWithDeadline(nil, nil, time.Time{})
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Delegate.Send fails with an error, SendWithDeadline should return it",
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("Delegate.Send error")
-				delegate = mocks.NewDelegate().RegisterSetSendDeadline(
+				delegate = clnmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -392,16 +392,16 @@ func TestClient(t *testing.T) {
 				client = New(delegate, nil)
 			)
 			_, _, err := client.SendWithDeadline(nil, nil, time.Time{})
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Client should forget cmd, if SendWithDeadline failed, because of Delegate.SetSendDeadline",
 		func(t *testing.T) {
 			var (
-				delegate = mocks.NewDelegate().RegisterSetSendDeadline(
+				delegate = clnmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return errors.New("Delegate.SetSendDeadline error")
 					},
@@ -417,16 +417,16 @@ func TestClient(t *testing.T) {
 				client = New(delegate, nil)
 			)
 			seq, _, _ := client.SendWithDeadline(nil, nil, time.Time{})
-			asserterror.Equal(client.Has(seq), false, t)
+			asserterror.Equal(t, client.Has(seq), false)
 
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Client should forget cmd, if SendWithDeadline failed, because of Delegate.Send",
 		func(t *testing.T) {
 			var (
-				delegate = mocks.NewDelegate().RegisterSetSendDeadline(
+				delegate = clnmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -447,17 +447,17 @@ func TestClient(t *testing.T) {
 				client = New(delegate, nil)
 			)
 			seq, _, _ := client.SendWithDeadline(nil, nil, time.Time{})
-			asserterror.Equal(client.Has(seq), false, t)
+			asserterror.Equal(t, client.Has(seq), false)
 
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("We should be able to forget cmd", func(t *testing.T) {
 		var (
-			cmd         = cmocks.NewCmd()
+			cmd         = mock.NewCmd()
 			receiveDone = make(chan struct{})
-			delegate    = mocks.NewDelegate().RegisterSend(
+			delegate    = clnmock.NewDelegate().RegisterSend(
 				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					return
 				},
@@ -477,18 +477,18 @@ func TestClient(t *testing.T) {
 		)
 		seq, _, _ := client.Send(cmd, nil)
 		client.Forget(seq)
-		asserterror.Equal(client.Has(seq), false, t)
+		asserterror.Equal(t, client.Has(seq), false)
 
 		close(receiveDone)
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("If the client was closed or failed to receive a next result, Done channel should be closed and Err method should return the cause",
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("Delegate.Receive error")
-				delegate = mocks.NewDelegate().RegisterReceive(
+				delegate = clnmock.NewDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = wantErr
 						return
@@ -501,19 +501,19 @@ func TestClient(t *testing.T) {
 			)
 			waitDone(client.Done(), t)
 			err := client.Err()
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("We should be able to close the client while it queues a result",
 		func(t *testing.T) {
 			var (
-				wantCmd    = cmocks.NewCmd()
-				wantResult = cmocks.NewResult().RegisterLastOne(
+				wantCmd    = mock.NewCmd()
+				wantResult = mock.NewResult().RegisterLastOne(
 					func() (lastOne bool) { return true },
 				)
 				results  = make(chan core.AsyncResult)
-				delegate = mocks.NewDelegate().RegisterSend(
+				delegate = clnmock.NewDelegate().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						err = errors.New("Delegate.Send error")
 						return
@@ -534,8 +534,8 @@ func TestClient(t *testing.T) {
 			waitDone(client.Done(), t)
 
 			err := client.Err()
-			asserterror.EqualError(err, ErrClosed, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, ErrClosed)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Delegate.Close fails with an error, Close should return it",
@@ -545,7 +545,7 @@ func TestClient(t *testing.T) {
 
 				receiveDone = make(chan struct{})
 				wantErr     = NewClientError(delegateErr)
-				delegate    = mocks.NewDelegate().RegisterReceive(
+				delegate    = clnmock.NewDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						<-receiveDone
 						err = errors.New("Delegate.Receive error")
@@ -562,11 +562,11 @@ func TestClient(t *testing.T) {
 				client = New(delegate, nil)
 			)
 			err := client.Close()
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 
 			close(receiveDone)
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Delegate.Flush fails with an error, Send of all involved Commands should return error",
@@ -575,10 +575,10 @@ func TestClient(t *testing.T) {
 				delegateErr = errors.New("flush error")
 
 				wantErr  = NewClientError(delegateErr)
-				cmd1     = cmocks.NewCmd()
-				cmd2     = cmocks.NewCmd()
-				cmd3     = cmocks.NewCmd()
-				delegate = mocks.NewDelegate().RegisterNSend(3,
+				cmd1     = mock.NewCmd()
+				cmd2     = mock.NewCmd()
+				cmd3     = mock.NewCmd()
+				delegate = clnmock.NewDelegate().RegisterNSend(3,
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return
 					},
@@ -600,19 +600,19 @@ func TestClient(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				_, _, err := client.Send(cmd1, nil)
-				asserterror.EqualError(err, wantErr, t)
+				asserterror.EqualError(t, err, wantErr)
 			}()
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				_, _, err := client.Send(cmd2, nil)
-				asserterror.EqualError(err, wantErr, t)
+				asserterror.EqualError(t, err, wantErr)
 			}()
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
 				_, _, err := client.Send(cmd3, nil)
-				asserterror.EqualError(err, wantErr, t)
+				asserterror.EqualError(t, err, wantErr)
 			}()
 			wg.Wait()
 			waitDone(client.Done(), t)
@@ -623,14 +623,14 @@ func TestClient(t *testing.T) {
 			// time.Sleep(200*time.Milisecond) before the flush method acquires a
 			// lock.
 			//
-			// asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			// asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If the client has lost a connection it should try to reconnect",
 		func(t *testing.T) {
 			var (
 				reconected = make(chan struct{})
-				delegate   = mocks.NewReconnectDelegate().RegisterReceive(
+				delegate   = clnmock.NewReconnectDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = net.ErrClosed
 						return
@@ -650,13 +650,13 @@ func TestClient(t *testing.T) {
 			)
 			waitDone(reconected, t)
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If the client is closed it should not reconnect", func(t *testing.T) {
 		var (
 			receiveDone = make(chan struct{})
-			delegate    = mocks.NewReconnectDelegate().RegisterReceive(
+			delegate    = clnmock.NewReconnectDelegate().RegisterReceive(
 				func() (seq core.Seq, result core.Result, n int, err error) {
 					<-receiveDone
 					err = ErrClosed
@@ -669,17 +669,17 @@ func TestClient(t *testing.T) {
 			client = New(delegate, nil)
 		)
 		err := client.Close()
-		asserterror.EqualError(err, nil, t)
+		asserterror.EqualError(t, err, nil)
 
 		waitDone(client.Done(), t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("If reconnection fails with an error, it should became the client error",
 		func(t *testing.T) {
 			var (
 				wantErr  = errors.New("reconnection error")
-				delegate = mocks.NewReconnectDelegate().RegisterReceive(
+				delegate = clnmock.NewReconnectDelegate().RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
 						err = net.ErrClosed
 						return
@@ -694,15 +694,15 @@ func TestClient(t *testing.T) {
 			)
 			waitDone(client.Done(), t)
 			err := client.Err()
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Upon creation, the client should call KeepaliveDelegate.Keepalive()",
 		func(t *testing.T) {
 			var (
-				delegate = mocks.NewKeepaliveDelegate().RegisterKeepalive(
+				delegate = clnmock.NewKeepaliveDelegate().RegisterKeepalive(
 					func(muSn *sync.Mutex) {},
 				).RegisterReceive(
 					func() (seq core.Seq, result core.Result, n int, err error) {
@@ -716,7 +716,7 @@ func TestClient(t *testing.T) {
 				mocks  = []*mok.Mock{delegate.Mock}
 			)
 			waitDone(client.Done(), t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 }
 

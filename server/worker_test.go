@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
-	mocks "github.com/cmd-stream/testkit-go/mocks/core/server"
+	"github.com/cmd-stream/core-go/test/mock"
+	srvmock "github.com/cmd-stream/core-go/test/mock/server"
 	"github.com/ymz-ncnk/mok"
 )
 
@@ -22,7 +22,7 @@ func TestWorker(t *testing.T) {
 				wg       = &sync.WaitGroup{}
 				conn1    = makeConn(addr)
 				conn2    = makeConn(addr)
-				delegate = mocks.NewDelegate().RegisterHandle(
+				delegate = srvmock.NewDelegate().RegisterHandle(
 					func(ctx context.Context, conn net.Conn) (err error) {
 						if conn != conn1 {
 							t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
@@ -52,9 +52,9 @@ func TestWorker(t *testing.T) {
 			var (
 				wantErr  = errors.New("handle conn failed")
 				wg       = &sync.WaitGroup{}
-				conn1    = cmocks.NewConn()
-				conn2    = cmocks.NewConn()
-				delegate = mocks.NewDelegate().RegisterHandle(
+				conn1    = mock.NewConn()
+				conn2    = mock.NewConn()
+				delegate = srvmock.NewDelegate().RegisterHandle(
 					func(ctx context.Context, conn net.Conn) (err error) {
 						defer wg.Done()
 						if conn != conn1 {
@@ -77,72 +77,72 @@ func TestWorker(t *testing.T) {
 	)
 
 	// t.Run("Handle two connections", func(t *testing.T) {
-	// 	// addr := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9000}
-
-	// 	// t.Run("With LostConnCallback", func(t *testing.T) {
-	// 	// 	var (
-	// 	// 		wantErr  = errors.New("handle conn failed")
-	// 	// 		wg       = &sync.WaitGroup{}
-	// 	// 		conn1    = makeConn(addr)
-	// 	// 		conn2    = makeConn(addr)
-	// 	// 		delegate = cmock.NewServerDelegate().RegisterHandle(
-	// 	// 			func(ctx context.Context, conn net.Conn) (err error) {
-	// 	// 				if conn != conn1 {
-	// 	// 					t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
-	// 	// 				}
-	// 	// 				return wantErr
-	// 	// 			},
-	// 	// 		).RegisterHandle(
-	// 	// 			func(ctx context.Context, conn net.Conn) (err error) {
-	// 	// 				if conn != conn2 {
-	// 	// 					t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
-	// 	// 				}
-	// 	// 				return wantErr
-	// 	// 			},
-	// 	// 		)
-	// 	// 		lostConnCallback = func(addr net.Addr, err error) {
-	// 	// 			defer wg.Done()
-	// 	// 			if err != wantErr {
-	// 	// 				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-	// 	// 			}
-	// 	// 		}
-	// 	// 	)
-	// 	// 	testWorker(delegate, conn1, conn2, lostConnCallback, wg, t)
-	// 	// })
-
-	// 	// t.Run("Without LostConnCallback", func(t *testing.T) {
-	// 	// 	var (
-	// 	// 		wantErr  = errors.New("handle conn failed")
-	// 	// 		wg       = &sync.WaitGroup{}
-	// 	// 		conn1    = cmock.NewConn()
-	// 	// 		conn2    = cmock.NewConn()
-	// 	// 		delegate = cmock.NewServerDelegate().RegisterHandle(
-	// 	// 			func(ctx context.Context, conn net.Conn) (err error) {
-	// 	// 				defer wg.Done()
-	// 	// 				if conn != conn1 {
-	// 	// 					t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
-	// 	// 				}
-	// 	// 				return wantErr
-	// 	// 			},
-	// 	// 		).RegisterHandle(
-	// 	// 			func(ctx context.Context, conn net.Conn) (err error) {
-	// 	// 				defer wg.Done()
-	// 	// 				if conn != conn2 {
-	// 	// 					t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
-	// 	// 				}
-	// 	// 				return wantErr
-	// 	// 			},
-	// 	// 		)
-	// 	// 	)
-	// 	// 	testWorker(delegate, conn1, conn2, nil, wg, t)
-	// 	// })
+	// 	addr := &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 9000}
+	//
+	// 	t.Run("With LostConnCallback", func(t *testing.T) {
+	// 		var (
+	// 			wantErr  = errors.New("handle conn failed")
+	// 			wg       = &sync.WaitGroup{}
+	// 			conn1    = makeConn(addr)
+	// 			conn2    = makeConn(addr)
+	// 			delegate = cmock.NewServerDelegate().RegisterHandle(
+	// 				func(ctx context.Context, conn net.Conn) (err error) {
+	// 					if conn != conn1 {
+	// 						t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
+	// 					}
+	// 					return wantErr
+	// 				},
+	// 			).RegisterHandle(
+	// 				func(ctx context.Context, conn net.Conn) (err error) {
+	// 					if conn != conn2 {
+	// 						t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
+	// 					}
+	// 					return wantErr
+	// 				},
+	// 			)
+	// 			lostConnCallback = func(addr net.Addr, err error) {
+	// 				defer wg.Done()
+	// 				if err != wantErr {
+	// 					t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
+	// 				}
+	// 			}
+	// 		)
+	// 		testWorker(delegate, conn1, conn2, lostConnCallback, wg, t)
+	// 	})
+	//
+	// 	t.Run("Without LostConnCallback", func(t *testing.T) {
+	// 		var (
+	// 			wantErr  = errors.New("handle conn failed")
+	// 			wg       = &sync.WaitGroup{}
+	// 			conn1    = cmock.NewConn()
+	// 			conn2    = cmock.NewConn()
+	// 			delegate = cmock.NewServerDelegate().RegisterHandle(
+	// 				func(ctx context.Context, conn net.Conn) (err error) {
+	// 					defer wg.Done()
+	// 					if conn != conn1 {
+	// 						t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
+	// 					}
+	// 					return wantErr
+	// 				},
+	// 			).RegisterHandle(
+	// 				func(ctx context.Context, conn net.Conn) (err error) {
+	// 					defer wg.Done()
+	// 					if conn != conn2 {
+	// 						t.Errorf("unexpected conn, want '%v' actual '%v'", conn1, conn)
+	// 					}
+	// 					return wantErr
+	// 				},
+	// 			)
+	// 		)
+	// 		testWorker(delegate, conn1, conn2, nil, wg, t)
+	// 	})
 	// })
 
 	t.Run("We should be able to close the worker", func(t *testing.T) {
 		var (
 			wantErr  = ErrClosed
 			conns    = make(chan net.Conn)
-			delegate = mocks.NewDelegate()
+			delegate = srvmock.NewDelegate()
 			mocks    = []*mok.Mock{delegate.Mock}
 			worker   = NewWorker(conns, delegate, nil)
 		)
@@ -157,7 +157,7 @@ func TestWorker(t *testing.T) {
 		var (
 			wantErr  error = nil
 			conns          = make(chan net.Conn)
-			delegate       = mocks.NewDelegate()
+			delegate       = srvmock.NewDelegate()
 			mocks          = []*mok.Mock{delegate.Mock}
 			worker         = NewWorker(conns, delegate, nil)
 		)
@@ -177,7 +177,7 @@ func runWorker(worker Worker) (errs chan error) {
 	return errs
 }
 
-func testWorker(delegate mocks.Delegate, conn1, conn2 cmocks.Conn,
+func testWorker(delegate srvmock.Delegate, conn1, conn2 mock.Conn,
 	lostConnCallback LostConnCallback,
 	wg *sync.WaitGroup,
 	t *testing.T,
