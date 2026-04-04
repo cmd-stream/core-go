@@ -2,6 +2,8 @@
 //
 // The Client uses a Delegate for sending Commands, receiving Results, and
 // managing connection state.
+//
+// Deprecated: use github.com/cmd-stream/cmd-stream-go instead.
 package client
 
 import (

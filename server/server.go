@@ -2,6 +2,8 @@
 //
 // The Server accepts client connections and delegates Command handling to a
 // user-provided Delegate.
+//
+// Deprecated: use github.com/cmd-stream/cmd-stream-go instead.
 package server
 
 import (
